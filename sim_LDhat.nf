@@ -103,6 +103,8 @@ process reformatFasta{
 
     script:
         //  Assumption setting it to haploid (1) causes the estimator to use 2ner
+
+        // Additional notes in python script
         """
         LDhat_reformatFasta.py seqgenOut.fa "${params.sampleSize}" "${params.genomeSize}" 1
         """
@@ -127,6 +129,7 @@ process LDhat_convert{
         file "sites.txt" into sites_forLDhatInterval
 
     script:
+
         """
         convert -seq LDhat_reformated.fa
         """
@@ -156,6 +159,8 @@ process LDhat_interval{
         file "type_table.txt"
 
     script:
+        // pre-generated lookup tables available from the ldhat github page was used. One that matches number of samples and mutation rate was selected.
+        // the arguments -its, -samp, -bpen use recommened values given in the manual for the interval program.
         """
         interval -seq sites.txt -loc locs.txt -lk lk_n100_t0.001 -its 1000000 -samp 2000 -bpen 5
         """
@@ -180,6 +185,7 @@ process LDhat_stat{
         file "statOut.txt"
 
     script:
+        // The information printed on screen was useful so decided to save that also.
         """
         stat -input rates.txt > statOut.txt
         """
