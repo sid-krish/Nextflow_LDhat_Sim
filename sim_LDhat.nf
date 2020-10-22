@@ -2,6 +2,7 @@
 
 params.genomeSize = '100000'
 params.meanFragmentLen = '150'
+params.sampleSize = '100'
 
 // Rates the user wishes to change
 recom_rates = [0.001]
@@ -30,7 +31,7 @@ process fastSimBac{
         
     script:
         """
-        fastSimBac 100 "${params.genomeSize}" -s "${seed}" -T -t "${mutation_rate}" -r "${recom_rate}" 500 > trees.txt
+        fastSimBac "${params.sampleSize}" "${params.genomeSize}" -s "${seed}" -T -t "${mutation_rate}" -r "${recom_rate}" 500 > trees.txt
         """
 }
 
@@ -96,11 +97,10 @@ process reformatFasta{
         val rOut3
 
     output:
-        file "reformated.fa" into genomes_forArt, genomes_forIsolate
+        file "LDhat_reformated.fa" into genomes_forArt, genomes_forIsolate
 
     script:
         """
-        reformatFasta.py seqgenOut.fa
+        LDhat_reformatFasta.py seqgenOut.fa "${params.sampleSize}" "${params.genomeSize}" 1
         """
 }
-
