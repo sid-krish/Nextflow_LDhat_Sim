@@ -84,7 +84,7 @@ process seqGen{
 
 
 process reformatFasta{
-    // reformats headers of fasta enteries into a format suitable for lofreq
+    // reformats headers of fasta enteries into a format suitable for LDhat
     publishDir "Output", mode: "copy", saveAs: { filename -> "s_"+"$sOut3"+"_m_"+"$mOut3"+"_r_"+"$rOut3"+"/"+
                                                 "s_"+"$sOut3"+"_m_"+"$mOut3"+"_r_"+"$rOut3"+"_"+"$filename" }
 
@@ -97,10 +97,34 @@ process reformatFasta{
         val rOut3
 
     output:
-        file "LDhat_reformated.fa" into genomes_forArt, genomes_forIsolate
+        file "LDhat_reformated.fa" into fasta_forLDhatConvert
 
     script:
         """
         LDhat_reformatFasta.py seqgenOut.fa "${params.sampleSize}" "${params.genomeSize}" 1
         """
+}
+
+process LDhat_convert{
+    publishDir "Output", mode: "copy", saveAs: { filename -> "s_"+"$sOut4"+"_m_"+"$mOut4"+"_r_"+"$rOut4"+"/"+
+                                                "s_"+"$sOut4"+"_m_"+"$mOut4"+"_r_"+"$rOut4"+"_"+"$filename" }
+
+    maxForks 1
+
+    input:
+        file fasta_forLDhatConvert
+        val sOut4
+        val mOut4
+        val rOut4
+
+    output:
+        file "freqs.txt"
+        file "locs.txt"
+        file "sites.txt"
+
+    script:
+        """
+        convert -seq LDhat_reformated.fa
+        """
+
 }
