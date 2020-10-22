@@ -162,3 +162,27 @@ process LDhat_interval{
 
 }
 
+
+process LDhat_stat{
+    publishDir "Output", mode: "copy", saveAs: { filename -> "s_"+"$sOut6"+"_m_"+"$mOut6"+"_r_"+"$rOut6"+"/"+
+                                                "s_"+"$sOut6"+"_m_"+"$mOut6"+"_r_"+"$rOut6"+"_"+"$filename" }
+
+    maxForks 1
+
+    input:
+        file rates_forLDhatStat
+        val sOut6
+        val mOut6
+        val rOut6
+
+    output:
+        file "res.txt"
+        file "statOut.txt"
+
+    script:
+        """
+        stat -input rates.txt > statOut.txt
+        """
+
+}
+
