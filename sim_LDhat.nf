@@ -9,6 +9,8 @@ recom_rates = [0.001]
 mutation_rates = [0.001]
 seed_values = [1]
 
+// likelihood table
+lt_file = Channel.fromPath("$baseDir/lk_n100_t0.001") // n=100, theta=0.001 per site
 
 process fastSimBac{
     publishDir "Output", mode: "copy", saveAs: { filename -> "s_"+"$seed"+"_m_"+"$mutation_rate"+"_r_"+"$recom_rate"+"/"+
@@ -100,10 +102,12 @@ process reformatFasta{
         file "LDhat_reformated.fa" into fasta_forLDhatConvert
 
     script:
+        //  Assumption setting it to haploid (1) causes the estimator to use 2ner
         """
         LDhat_reformatFasta.py seqgenOut.fa "${params.sampleSize}" "${params.genomeSize}" 1
         """
 }
+
 
 process LDhat_convert{
     publishDir "Output", mode: "copy", saveAs: { filename -> "s_"+"$sOut4"+"_m_"+"$mOut4"+"_r_"+"$rOut4"+"/"+
@@ -118,9 +122,9 @@ process LDhat_convert{
         val rOut4
 
     output:
-        file "freqs.txt"
-        file "locs.txt"
-        file "sites.txt"
+        file "freqs.txt" into freqs_forLDhatInterval
+        file "locs.txt" into locs_forLDhatInterval
+        file "sites.txt" into sites_forLDhatInterval
 
     script:
         """
@@ -128,3 +132,33 @@ process LDhat_convert{
         """
 
 }
+
+
+process LDhat_interval{
+    publishDir "Output", mode: "copy", saveAs: { filename -> "s_"+"$sOut5"+"_m_"+"$mOut5"+"_r_"+"$rOut5"+"/"+
+                                                "s_"+"$sOut5"+"_m_"+"$mOut5"+"_r_"+"$rOut5"+"_"+"$filename" }
+
+    maxForks 1
+
+    input:
+        file lt from lt_file
+        file freqs_forLDhatInterval
+        file locs_forLDhatInterval
+        file sites_forLDhatInterval
+        val sOut5
+        val mOut5
+        val rOut5
+
+    output:
+        file "bounds.txt" into bounds_forLDhatStat
+        file "rates.txt" into rates_forLDhatStat
+        file "new_lk.txt"
+        file "type_table.txt"
+
+    script:
+        """
+        interval -seq sites.txt -loc locs.txt -lk lk_n100_t0.001 -its 1000000 -samp 2000 -bpen 5
+        """
+
+}
+
