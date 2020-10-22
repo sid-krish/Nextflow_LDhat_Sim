@@ -127,11 +127,12 @@ process LDhat_convert{
         file "freqs.txt" into freqs_forLDhatInterval
         file "locs.txt" into locs_forLDhatInterval
         file "sites.txt" into sites_forLDhatInterval
+        file "convertOut.txt"
 
     script:
-
+        // The information printed on screen was useful so decided to save that also.
         """
-        convert -seq LDhat_reformated.fa
+        convert -seq LDhat_reformated.fa > convertOut.txt
         """
 
 }
@@ -157,12 +158,15 @@ process LDhat_interval{
         file "rates.txt" into rates_forLDhatStat
         file "new_lk.txt"
         file "type_table.txt"
+        file "intervalOut.txt"
 
     script:
         // pre-generated lookup tables available from the ldhat github page was used. One that matches number of samples and mutation rate was selected.
         // the arguments -its, -samp, -bpen use recommened values given in the manual for the interval program.
+
+        // The information printed on screen was useful so decided to save that also.
         """
-        interval -seq sites.txt -loc locs.txt -lk lk_n100_t0.001 -its 1000000 -samp 2000 -bpen 5
+        interval -seq sites.txt -loc locs.txt -lk lk_n100_t0.001 -its 1000000 -samp 2000 -bpen 5 > intervalOut.txt
         """
 
 }
