@@ -6,7 +6,7 @@ params.sampleSize = '100'
 
 // Rates the user wishes to change
 recom_rates = [0.001]
-mutation_rates = [0.001]
+mutation_rates = [0.001] // per site?
 seed_values = [1]
 
 // likelihood table
