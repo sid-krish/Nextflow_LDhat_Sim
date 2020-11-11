@@ -11,7 +11,6 @@ seed_values = [1]
 
 // likelihood table
 lt_file = Channel.fromPath("$baseDir/lk_n100_t0.001") // n=100, theta=0.001 per site
-// accidentally used the wrong file need to change
 
 process fastSimBac{
     publishDir "Output", mode: "copy", saveAs: { filename -> "s_"+"$seed"+"_m_"+"$mutation_rate"+"_r_"+"$recom_rate"+"/"+
