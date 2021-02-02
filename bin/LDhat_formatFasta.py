@@ -23,8 +23,6 @@ with open('LDhat_formated.fa', 'w') as fileOut:
     # the number of sites in the alignment and a flag (1 or 2) that
     # details whether the data is haplotype/phased (1) or genotype/unphased (2).
 
-    # Values used: sample size (how many genomes), genome size (size of each genome), 1 (for haplotype)
-    # For the number of sites in alignment, it only requires one number so full genome size was used.
     fileOut.write(f"{numSequences} {numSitesInAln} {phaseType}\n")
     for read in samfile.fetch():
         fileOut.write(f">{read.query_name}\n")

@@ -173,14 +173,17 @@ process LDHAT_REFORMAT_SAM_INTO_FASTA{
         val seed
 
     output:
-        path "LDhat_formated.fa", emit: ldhat_reformated_fa
+        path "LDhat_formated.fa", emit: ldhat_formated_fa
 
     script:
         // Reformats headers of fasta enteries into a format suitable for LDhat
         // Assumption setting it to haploid (1) causes the estimator to use 2ner
         // Additional notes in python script
+
+        // the sample size used here and the lookup table sample size need to be the same
         """
-        LDhat_formatFasta.py Aligned.sam "${params.sampleSize}" "${params.genomeSize}" 1
+        # numSeq=\$(wc -l Aligned.sam | awk '{ print \$1 }')
+        LDhat_formatFasta.py Aligned.sam "${params.sampleSize}" "${params.meanFragmentLen}" 1
         """
 }
 
@@ -227,9 +230,9 @@ process LDHAT_CONVERT{
 
     script:
         // The information printed on screen was useful so decided to save that also.
-        // -2only -> Only output sites with exactly two alleles
+        // -2only, only output sites with exactly two alleles
         """
-        convert -seq -2only LDhat_reformated.fa > convertOut.txt
+        convert -seq LDhat_formated.fa > convertOut.txt
         """
 
 }
@@ -281,7 +284,7 @@ process LDHAT_STAT{
 
     output:
         path "res.txt" 
-        path "statOut.txt",
+        path "statOut.txt"
 
     script:
         // The information printed on screen was useful so decided to save that also.
@@ -330,7 +333,7 @@ workflow {
 
     LOOKUP_TABLE_LDPOP(FAST_SIM_BAC.out.r_val, FAST_SIM_BAC.out.m_val, FAST_SIM_BAC.out.s_val)
 
-    LDHAT_CONVERT(LDHAT_REFORMAT_SAM_INTO_FASTA.out.ldhat_reformated_fa, FAST_SIM_BAC.out.r_val, FAST_SIM_BAC.out.m_val, FAST_SIM_BAC.out.s_val)
+    LDHAT_CONVERT(LDHAT_REFORMAT_SAM_INTO_FASTA.out.ldhat_formated_fa, FAST_SIM_BAC.out.r_val, FAST_SIM_BAC.out.m_val, FAST_SIM_BAC.out.s_val)
 
     LDHAT_INTERVAL(LOOKUP_TABLE_LDPOP.out.lookupTable_txt, LDHAT_CONVERT.out.freqs_txt, LDHAT_CONVERT.out.locs_txt, LDHAT_CONVERT.out.sites_txt, FAST_SIM_BAC.out.r_val, FAST_SIM_BAC.out.m_val, FAST_SIM_BAC.out.s_val)
 
