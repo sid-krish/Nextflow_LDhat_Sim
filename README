@@ -1,5 +1,5 @@
 First run
-1. Build docker image from within Docker directory: docker build -t sidkris/sim_ldhat:latest .
+1. Build docker image from within Docker directory: docker build -t sim_ldhat/sim_ldhat:latest .
 2. Within the bin directory run chmod +x *.py
 
 Launch

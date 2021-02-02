@@ -1,2 +1,16 @@
 
 *.001
+
+.nextflow/
+
+work/
+
+.DS_Store
+
+bin/ldpop/__pycache__/
+
+.idea/
+
+Output/
+
+.nextflow.log
