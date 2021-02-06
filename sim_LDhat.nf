@@ -138,7 +138,7 @@ process LDHAT_CONVERT{
         // The information printed on screen was useful so decided to save that also.
         // -2only, only output sites with exactly two alleles
         """
-        convert -seq -2only LDhat_reformated.fa > convertOut.txt
+        convert -seq  LDhat_reformated.fa -2only > convertOut.txt
         """
 
 }
