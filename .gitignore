@@ -14,3 +14,5 @@ bin/ldpop/__pycache__/
 Output/
 
 .nextflow.log
+
+ReferenceOutput/

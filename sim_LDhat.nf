@@ -7,7 +7,9 @@ process FAST_SIM_BAC{
 
     maxForks 1 // Run sequentially
     time '2h' // Should fastsimbac freeze, skip
-    errorStrategy 'ignore'// Should fastsimbac freeze, skip. Without this line program will stop
+    // errorStrategy 'ignore'// Should fastsimbac freeze, skip. Without this line program will stop
+
+    echo true
     
     input:
         each recom_rate
@@ -42,7 +44,7 @@ process CLEAN_TREES{
 
     script:
     """
-    cleanTrees.py trees.txt
+    cleanTrees.py trees.txt 
     """
 }
 
@@ -70,8 +72,8 @@ process SEQ_GEN{
     """
 }
 
-process REFORMAT_FASTA{
-    // reformats headers of fasta enteries into a format suitable for lofreq
+
+process LDHAT_REFORMAT_FASTA{
     publishDir "Output", mode: "copy", saveAs: {filename -> "s_${seed}_m_${mutation_rate}_r_${recom_rate}/s_${seed}_m_${mutation_rate}_r_${recom_rate}_${filename}"}
 
     maxForks 1
@@ -83,108 +85,12 @@ process REFORMAT_FASTA{
         val seed
 
     output:
-        path "reformated.fa", emit: reformated_fa
+        path "LDhat_reformated.fa", emit: ldhat_reformated_fa
 
     script:
     """
-    reformatFasta.py seqgenOut.fa
+    LDhat_reformat_fasta.py seqgenOut.fa "${params.sampleSize}" "${params.genomeSize}" 1
     """
-}
-
-process ISOLATE_GENOME{
-    publishDir "Output", mode: "copy", saveAs: {filename -> "s_${seed}_m_${mutation_rate}_r_${recom_rate}/s_${seed}_m_${mutation_rate}_r_${recom_rate}_${filename}"}
-
-    maxForks 1
-
-    input:
-        path genomes_forIsolate
-        val recom_rate
-        val mutation_rate
-        val seed
-
-    output:
-        path "firstGenome.fa", emit: firstGenome_fa
-
-    script:
-    """
-    isolateGenome.py reformated.fa
-    """
-}
-
-// Using all fasta entries
-process ART_ILLUMINA{
-    publishDir "Output", mode: "copy", saveAs: {filename -> "s_${seed}_m_${mutation_rate}_r_${recom_rate}/s_${seed}_m_${mutation_rate}_r_${recom_rate}_${filename}"}
-
-    maxForks 1
-
-    input:
-        path genomes_forArt
-        val recom_rate
-        val mutation_rate
-        val seed
-
-    output:
-        path "art_fastSimBac.fq", emit: art_fastSimBac_fq // only file we are interested in
-
-    script:
-    """
-    art_illumina --seqSys HSXt --rndSeed ${seed} --noALN \
-    --in reformated.fa --len ${params.meanFragmentLen} --fcov 2 --out art_fastSimBac
-    """
-    // go with single end reads initially to make things easier
-    // mflen should be around 500, sdev around 50-60
-}
-
-//using first fa entry only (one genome)
-process BWA_MEM{
-    publishDir "Output", mode: "copy", saveAs: {filename -> "s_${seed}_m_${mutation_rate}_r_${recom_rate}/s_${seed}_m_${mutation_rate}_r_${recom_rate}_${filename}"}
-
-    maxForks 1
-
-    // cpus 8
-
-    input:
-        path genome_forIndex
-        path fq
-        val recom_rate
-        val mutation_rate
-        val seed
-
-    output:
-        path "Aligned.sam", emit: aligned_sam
-
-    script:
-    """
-    bwa index firstGenome.fa
-    bwa mem -t 4 firstGenome.fa art_fastSimBac.fq > Aligned.sam
-    """
-    // HPC will consider this to be using 8 threads
-}
-
-process LDHAT_REFORMAT_SAM_INTO_FASTA{
-    publishDir "Output", mode: "copy", saveAs: {filename -> "s_${seed}_m_${mutation_rate}_r_${recom_rate}/s_${seed}_m_${mutation_rate}_r_${recom_rate}_${filename}"}
-
-    maxForks 1
-
-    input:
-        path samfile
-        val recom_rate
-        val mutation_rate
-        val seed
-
-    output:
-        path "LDhat_formated.fa", emit: ldhat_formated_fa
-
-    script:
-        // Reformats headers of fasta enteries into a format suitable for LDhat
-        // Assumption setting it to haploid (1) causes the estimator to use 2ner
-        // Additional notes in python script
-
-        // the sample size used here and the lookup table sample size need to be the same
-        """
-        # numSeq=\$(wc -l Aligned.sam | awk '{ print \$1 }')
-        LDhat_formatFasta.py Aligned.sam "${params.sampleSize}" "${params.meanFragmentLen}" 1
-        """
 }
 
 
@@ -232,7 +138,7 @@ process LDHAT_CONVERT{
         // The information printed on screen was useful so decided to save that also.
         // -2only, only output sites with exactly two alleles
         """
-        convert -seq LDhat_formated.fa > convertOut.txt
+        convert -seq -2only LDhat_reformated.fa > convertOut.txt
         """
 
 }
@@ -298,7 +204,7 @@ process LDHAT_STAT{
 // Note: Channels can be called unlimited number of times in DSL2
 params.genomeSize = '250000'
 params.meanFragmentLen = '150'
-params.sampleSize = '100'
+params.sampleSize = '50'
 params.recom_tract_len = '500'
 params.ldpop_rho_range = '10,100'
 
@@ -311,7 +217,7 @@ params.ldpop_rho_range = '10,100'
 
 recom_rates = Channel.from(0.1)
 mutation_rates = Channel.from(0.1)
-seed_values = Channel.from(3)
+seed_values = Channel.from(12345)
 
 workflow {
     // A process component can be invoked only once in the same workflow context.
@@ -321,19 +227,11 @@ workflow {
 
     SEQ_GEN(CLEAN_TREES.out.cleanTrees_txt, FAST_SIM_BAC.out.r_val, FAST_SIM_BAC.out.m_val, FAST_SIM_BAC.out.s_val)
 
-    REFORMAT_FASTA(SEQ_GEN.out.seqgenout_fa, FAST_SIM_BAC.out.r_val, FAST_SIM_BAC.out.m_val, FAST_SIM_BAC.out.s_val)
-
-    ISOLATE_GENOME(REFORMAT_FASTA.out.reformated_fa, FAST_SIM_BAC.out.r_val, FAST_SIM_BAC.out.m_val, FAST_SIM_BAC.out.s_val)
-
-    ART_ILLUMINA(REFORMAT_FASTA.out.reformated_fa, FAST_SIM_BAC.out.r_val, FAST_SIM_BAC.out.m_val, FAST_SIM_BAC.out.s_val)
-
-    BWA_MEM(ISOLATE_GENOME.out.firstGenome_fa, ART_ILLUMINA.out.art_fastSimBac_fq, FAST_SIM_BAC.out.r_val, FAST_SIM_BAC.out.m_val, FAST_SIM_BAC.out.s_val)
-
-    LDHAT_REFORMAT_SAM_INTO_FASTA(BWA_MEM.out.aligned_sam, FAST_SIM_BAC.out.r_val, FAST_SIM_BAC.out.m_val, FAST_SIM_BAC.out.s_val)
+    LDHAT_REFORMAT_FASTA(SEQ_GEN.out.seqgenout_fa, FAST_SIM_BAC.out.r_val, FAST_SIM_BAC.out.m_val, FAST_SIM_BAC.out.s_val)
 
     LOOKUP_TABLE_LDPOP(FAST_SIM_BAC.out.r_val, FAST_SIM_BAC.out.m_val, FAST_SIM_BAC.out.s_val)
 
-    LDHAT_CONVERT(LDHAT_REFORMAT_SAM_INTO_FASTA.out.ldhat_formated_fa, FAST_SIM_BAC.out.r_val, FAST_SIM_BAC.out.m_val, FAST_SIM_BAC.out.s_val)
+    LDHAT_CONVERT(LDHAT_REFORMAT_FASTA.out.ldhat_reformated_fa, FAST_SIM_BAC.out.r_val, FAST_SIM_BAC.out.m_val, FAST_SIM_BAC.out.s_val)
 
     LDHAT_INTERVAL(LOOKUP_TABLE_LDPOP.out.lookupTable_txt, LDHAT_CONVERT.out.freqs_txt, LDHAT_CONVERT.out.locs_txt, LDHAT_CONVERT.out.sites_txt, FAST_SIM_BAC.out.r_val, FAST_SIM_BAC.out.m_val, FAST_SIM_BAC.out.s_val)
 
