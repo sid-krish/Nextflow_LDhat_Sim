@@ -177,7 +177,7 @@ process LDHAT_INTERVAL{
 }
 
 
-process LDHAT_STAT{
+process LDHAT_INTERVAL_STAT{
     publishDir "Output", mode: "copy", saveAs: {filename -> "s_${seed}_m_${mutation_rate}_r_${recom_rate}/s_${seed}_m_${mutation_rate}_r_${recom_rate}_${filename}"}
 
     maxForks 1
@@ -199,6 +199,34 @@ process LDHAT_STAT{
         """
 
 }
+
+
+process LDHAT_PAIRWISE{
+    publishDir "Output", mode: "copy", saveAs: {filename -> "s_${seed}_m_${mutation_rate}_r_${recom_rate}/s_${seed}_m_${mutation_rate}_r_${recom_rate}_${filename}"}
+
+    maxForks 1
+
+    input:
+        path lookup_table_file
+        path locs_forLDhatInterval
+        path sites_forLDhatInterval
+        val recom_rate
+        val mutation_rate
+        val seed
+
+    output:
+        path "pairwise_freqs.txt", emit: bounds_forLDhatStat
+        path "pairwise_outfile.txt", emit: rates_forLDhatStat
+        path "pairwise_stdOut.txt", emit: new_lk_txt
+
+    script:
+        // yes 0 for prompts. Options can be seen in pairwise_stdOut.txt
+        """
+        yes 0 | pairwise -seq sites.txt -loc locs.txt -lk lookupTable.txt -concise -prefix pairwise_ > pairwise_stdOut.txt
+        """
+
+}
+
 
 // Params and Channels for workflow
 // Note: Channels can be called unlimited number of times in DSL2
@@ -235,5 +263,7 @@ workflow {
 
     LDHAT_INTERVAL(LOOKUP_TABLE_LDPOP.out.lookupTable_txt, LDHAT_CONVERT.out.freqs_txt, LDHAT_CONVERT.out.locs_txt, LDHAT_CONVERT.out.sites_txt, FAST_SIM_BAC.out.r_val, FAST_SIM_BAC.out.m_val, FAST_SIM_BAC.out.s_val)
 
-    LDHAT_STAT(LDHAT_INTERVAL.out.rates_forLDhatStat, FAST_SIM_BAC.out.r_val, FAST_SIM_BAC.out.m_val, FAST_SIM_BAC.out.s_val)
+    LDHAT_INTERVAL_STAT(LDHAT_INTERVAL.out.rates_forLDhatStat, FAST_SIM_BAC.out.r_val, FAST_SIM_BAC.out.m_val, FAST_SIM_BAC.out.s_val)
+
+    LDHAT_PAIRWISE(LOOKUP_TABLE_LDPOP.out.lookupTable_txt, LDHAT_CONVERT.out.locs_txt, LDHAT_CONVERT.out.sites_txt, FAST_SIM_BAC.out.r_val, FAST_SIM_BAC.out.m_val, FAST_SIM_BAC.out.s_val)
 }
