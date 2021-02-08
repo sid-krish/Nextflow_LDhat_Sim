@@ -16,3 +16,15 @@ Output/
 .nextflow.log
 
 ReferenceOutput/
+
+ReferenceOutput_ldhat/
+
+ReferenceOutput_ldpop_approx/
+
+ReferenceOutput_ldpop_exact/
+
+.seed
+
+lookupTable.txt
+
+new_lk.txt

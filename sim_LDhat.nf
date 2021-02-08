@@ -234,7 +234,7 @@ params.genomeSize = '250000'
 params.meanFragmentLen = '150'
 params.sampleSize = '50'
 params.recom_tract_len = '500'
-params.ldpop_rho_range = '10,100'
+params.ldpop_rho_range = '101,100'
 
 // precomputed likelihood table
 // lookup_Table = Channel.fromPath("$baseDir/lookupTable.txt")
@@ -243,8 +243,8 @@ params.ldpop_rho_range = '10,100'
 // mutation_rates = Channel.from(0.001, 0.01, 0.1)
 // seed_values = Channel.from(1,2,3,4,5,6,7,8,9,10)
 
-recom_rates = Channel.from(0.1)
-mutation_rates = Channel.from(0.1)
+recom_rates = Channel.from(0.001)
+mutation_rates = Channel.from(0.001)
 seed_values = Channel.from(12345)
 
 workflow {
