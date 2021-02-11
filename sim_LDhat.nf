@@ -28,10 +28,10 @@ process FAST_SIM_BAC{
     """
     fastSimBac ${params.sampleSize} ${params.genomeSize} -s ${seed} -T -t ${mutation_rate} -r ${recom_rate} ${params.recom_tract_len} > trees.txt
 
-    echo rho \\(2\\*N0\\*r\\*l\\) = ${2 * params.effective_pop_size * recom_rate * params.genomeSize} > rho_calculation.txt
-    echo N0 = ${params.effective_pop_size} >> rho_calculation.txt
+    echo N0 = ${params.effective_pop_size} > rho_calculation.txt
     echo r = ${recom_rate} >> rho_calculation.txt
-    echo l = ${params.genomeSize} >> rho_calculation.txt
+    echo l = ${params.genomeSize} '\n' >> rho_calculation.txt
+    echo rho \\(2\\*N0\\*r\\*l\\) = ${2 * params.effective_pop_size * recom_rate * params.genomeSize} >> rho_calculation.txt
     """
 }
 
@@ -254,7 +254,7 @@ cleanTrees = Channel.fromPath("$baseDir/cleanTrees.txt")
 // mutation_rates = Channel.from(0.001, 0.01, 0.1)
 // seed_values = Channel.from(1,2,3,4,5,6,7,8,9,10)
 
-recom_rates = Channel.from(0.00001)
+recom_rates = Channel.from(0.00005)
 mutation_rates = Channel.from(0.01)
 seed_values = Channel.from(123)
 
@@ -262,13 +262,13 @@ workflow {
     // A process component can be invoked only once in the same workflow context.
     FAST_SIM_BAC(recom_rates, mutation_rates, seed_values)
 
-    // CLEAN_TREES(FAST_SIM_BAC.out.trees_txt, FAST_SIM_BAC.out.r_val, FAST_SIM_BAC.out.m_val, FAST_SIM_BAC.out.s_val)
+    CLEAN_TREES(FAST_SIM_BAC.out.trees_txt, FAST_SIM_BAC.out.r_val, FAST_SIM_BAC.out.m_val, FAST_SIM_BAC.out.s_val)
 
     // CLEAN_TREES(trees, FAST_SIM_BAC.out.r_val, FAST_SIM_BAC.out.m_val, FAST_SIM_BAC.out.s_val)
 
-    // SEQ_GEN(CLEAN_TREES.out.cleanTrees_txt, FAST_SIM_BAC.out.r_val, FAST_SIM_BAC.out.m_val, FAST_SIM_BAC.out.s_val)
+    SEQ_GEN(CLEAN_TREES.out.cleanTrees_txt, FAST_SIM_BAC.out.r_val, FAST_SIM_BAC.out.m_val, FAST_SIM_BAC.out.s_val)
 
-    SEQ_GEN(cleanTrees, FAST_SIM_BAC.out.r_val, FAST_SIM_BAC.out.m_val, FAST_SIM_BAC.out.s_val)
+    // SEQ_GEN(cleanTrees, FAST_SIM_BAC.out.r_val, FAST_SIM_BAC.out.m_val, FAST_SIM_BAC.out.s_val)
 
     LDHAT_REFORMAT_FASTA(SEQ_GEN.out.seqgenout_fa, FAST_SIM_BAC.out.r_val, FAST_SIM_BAC.out.m_val, FAST_SIM_BAC.out.s_val)
 
