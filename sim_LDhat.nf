@@ -7,9 +7,9 @@ process FAST_SIM_BAC{
 
     maxForks 1 // Run sequentially
     time '2h' // Should fastsimbac freeze, skip
-    // errorStrategy 'ignore'// Should fastsimbac freeze, skip. Without this line program will stop
+    errorStrategy 'ignore'// Should fastsimbac freeze, skip. Without this line program will stop
 
-    echo true
+    // echo true
     
     input:
         each recom_rate
@@ -17,14 +17,21 @@ process FAST_SIM_BAC{
         each seed
 
     output:
+        path "rho_calculation.txt", emit: rho_rho_calculation_txt
         path "trees.txt", emit: trees_txt
         val "${recom_rate}", emit: r_val
         val "${mutation_rate}", emit: m_val
         val "${seed}", emit: s_val
              
     script:
+    // frist \ is nextflow escape second \ is for bash escape (escape the escape charecter)
     """
     fastSimBac ${params.sampleSize} ${params.genomeSize} -s ${seed} -T -t ${mutation_rate} -r ${recom_rate} ${params.recom_tract_len} > trees.txt
+
+    echo rho \\(2\\*N0\\*r\\*l\\) = ${2 * params.effective_pop_size * recom_rate * params.genomeSize} > rho_calculation.txt
+    echo N0 = ${params.effective_pop_size} >> rho_calculation.txt
+    echo r = ${recom_rate} >> rho_calculation.txt
+    echo l = ${params.genomeSize} >> rho_calculation.txt
     """
 }
 
@@ -230,30 +237,38 @@ process LDHAT_PAIRWISE{
 
 // Params and Channels for workflow
 // Note: Channels can be called unlimited number of times in DSL2
-params.genomeSize = '250000'
-params.meanFragmentLen = '150'
-params.sampleSize = '50'
-params.recom_tract_len = '500'
-params.ldpop_rho_range = '101,100'
+params.genomeSize = 100000
+params.meanFragmentLen = 150
+params.sampleSize = 50
+params.recom_tract_len = 500
+params.effective_pop_size = 1
+params.ldpop_rho_range = "101,100"
 
 // precomputed likelihood table
 // lookup_Table = Channel.fromPath("$baseDir/lookupTable.txt")
+
+// trees = Channel.fromPath("$baseDir/trees.txt")
+cleanTrees = Channel.fromPath("$baseDir/cleanTrees.txt")
 
 // recom_rates = Channel.from(0,0.0001,0.001,0.01,0.1)
 // mutation_rates = Channel.from(0.001, 0.01, 0.1)
 // seed_values = Channel.from(1,2,3,4,5,6,7,8,9,10)
 
-recom_rates = Channel.from(0.001)
-mutation_rates = Channel.from(0.001)
-seed_values = Channel.from(12345)
+recom_rates = Channel.from(0.00001)
+mutation_rates = Channel.from(0.01)
+seed_values = Channel.from(123)
 
 workflow {
     // A process component can be invoked only once in the same workflow context.
     FAST_SIM_BAC(recom_rates, mutation_rates, seed_values)
 
-    CLEAN_TREES(FAST_SIM_BAC.out.trees_txt, FAST_SIM_BAC.out.r_val, FAST_SIM_BAC.out.m_val, FAST_SIM_BAC.out.s_val)
+    // CLEAN_TREES(FAST_SIM_BAC.out.trees_txt, FAST_SIM_BAC.out.r_val, FAST_SIM_BAC.out.m_val, FAST_SIM_BAC.out.s_val)
 
-    SEQ_GEN(CLEAN_TREES.out.cleanTrees_txt, FAST_SIM_BAC.out.r_val, FAST_SIM_BAC.out.m_val, FAST_SIM_BAC.out.s_val)
+    // CLEAN_TREES(trees, FAST_SIM_BAC.out.r_val, FAST_SIM_BAC.out.m_val, FAST_SIM_BAC.out.s_val)
+
+    // SEQ_GEN(CLEAN_TREES.out.cleanTrees_txt, FAST_SIM_BAC.out.r_val, FAST_SIM_BAC.out.m_val, FAST_SIM_BAC.out.s_val)
+
+    SEQ_GEN(cleanTrees, FAST_SIM_BAC.out.r_val, FAST_SIM_BAC.out.m_val, FAST_SIM_BAC.out.s_val)
 
     LDHAT_REFORMAT_FASTA(SEQ_GEN.out.seqgenout_fa, FAST_SIM_BAC.out.r_val, FAST_SIM_BAC.out.m_val, FAST_SIM_BAC.out.s_val)
 
