@@ -222,14 +222,14 @@ process LDHAT_PAIRWISE{
         val seed
 
     output:
-        path "pairwise_freqs.txt", emit: bounds_forLDhatStat
-        path "pairwise_outfile.txt", emit: rates_forLDhatStat
-        path "pairwise_stdOut.txt", emit: new_lk_txt
+        path "pairwise_freqs.txt", emit: pairwise_freqs_txt
+        path "pairwise_outfile.txt", emit: pairwise_outfile_txt
+        path "pairwise_stdOut.txt", emit: pairwise_stdOut_txt
 
     script:
-        // yes 0 for prompts. Options can be seen in pairwise_stdOut.txt
+        // uses pexpect to handle unavoidale prompts
         """
-        yes 0 | pairwise -seq sites.txt -loc locs.txt -lk lookupTable.txt -prefix pairwise_ > pairwise_stdOut.txt
+        
         """
 
 }
