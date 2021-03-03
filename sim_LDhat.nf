@@ -229,7 +229,7 @@ process LDHAT_PAIRWISE{
     script:
         // yes 0 for prompts. Options can be seen in pairwise_stdOut.txt
         """
-        yes 0 | pairwise -seq sites.txt -loc locs.txt -lk lookupTable.txt -concise -prefix pairwise_ > pairwise_stdOut.txt
+        yes 0 | pairwise -seq sites.txt -loc locs.txt -lk lookupTable.txt -prefix pairwise_ > pairwise_stdOut.txt
         """
 
 }
@@ -237,24 +237,24 @@ process LDHAT_PAIRWISE{
 
 // Params and Channels for workflow
 // Note: Channels can be called unlimited number of times in DSL2
-params.genomeSize = 100000
-params.meanFragmentLen = 150
-params.sampleSize = 50
+params.genomeSize = 1000
+// params.meanFragmentLen = 150
+params.sampleSize = 2
 params.recom_tract_len = 500
+params.ldpop_rho_range = "20,100"
 params.effective_pop_size = 1
-params.ldpop_rho_range = "101,100"
 
 // precomputed likelihood table
 // lookup_Table = Channel.fromPath("$baseDir/lookupTable.txt")
 
-// trees = Channel.fromPath("$baseDir/trees.txt")
-cleanTrees = Channel.fromPath("$baseDir/cleanTrees.txt")
+trees = Channel.fromPath("$baseDir/trees.txt")
+// cleanTrees = Channel.fromPath("$baseDir/cleanTrees.txt")
 
 // recom_rates = Channel.from(0,0.0001,0.001,0.01,0.1)
 // mutation_rates = Channel.from(0.001, 0.01, 0.1)
 // seed_values = Channel.from(1,2,3,4,5,6,7,8,9,10)
 
-recom_rates = Channel.from(0.00005)
+recom_rates = Channel.from(0.001)
 mutation_rates = Channel.from(0.01)
 seed_values = Channel.from(123)
 
@@ -262,9 +262,9 @@ workflow {
     // A process component can be invoked only once in the same workflow context.
     FAST_SIM_BAC(recom_rates, mutation_rates, seed_values)
 
-    CLEAN_TREES(FAST_SIM_BAC.out.trees_txt, FAST_SIM_BAC.out.r_val, FAST_SIM_BAC.out.m_val, FAST_SIM_BAC.out.s_val)
+    // CLEAN_TREES(FAST_SIM_BAC.out.trees_txt, FAST_SIM_BAC.out.r_val, FAST_SIM_BAC.out.m_val, FAST_SIM_BAC.out.s_val)
 
-    // CLEAN_TREES(trees, FAST_SIM_BAC.out.r_val, FAST_SIM_BAC.out.m_val, FAST_SIM_BAC.out.s_val)
+    CLEAN_TREES(trees, FAST_SIM_BAC.out.r_val, FAST_SIM_BAC.out.m_val, FAST_SIM_BAC.out.s_val)
 
     SEQ_GEN(CLEAN_TREES.out.cleanTrees_txt, FAST_SIM_BAC.out.r_val, FAST_SIM_BAC.out.m_val, FAST_SIM_BAC.out.s_val)
 
@@ -276,9 +276,9 @@ workflow {
 
     LDHAT_CONVERT(LDHAT_REFORMAT_FASTA.out.ldhat_reformated_fa, FAST_SIM_BAC.out.r_val, FAST_SIM_BAC.out.m_val, FAST_SIM_BAC.out.s_val)
 
-    LDHAT_INTERVAL(LOOKUP_TABLE_LDPOP.out.lookupTable_txt, LDHAT_CONVERT.out.freqs_txt, LDHAT_CONVERT.out.locs_txt, LDHAT_CONVERT.out.sites_txt, FAST_SIM_BAC.out.r_val, FAST_SIM_BAC.out.m_val, FAST_SIM_BAC.out.s_val)
+    // LDHAT_INTERVAL(LOOKUP_TABLE_LDPOP.out.lookupTable_txt, LDHAT_CONVERT.out.freqs_txt, LDHAT_CONVERT.out.locs_txt, LDHAT_CONVERT.out.sites_txt, FAST_SIM_BAC.out.r_val, FAST_SIM_BAC.out.m_val, FAST_SIM_BAC.out.s_val)
 
-    LDHAT_INTERVAL_STAT(LDHAT_INTERVAL.out.rates_forLDhatStat, FAST_SIM_BAC.out.r_val, FAST_SIM_BAC.out.m_val, FAST_SIM_BAC.out.s_val)
+    // LDHAT_INTERVAL_STAT(LDHAT_INTERVAL.out.rates_forLDhatStat, FAST_SIM_BAC.out.r_val, FAST_SIM_BAC.out.m_val, FAST_SIM_BAC.out.s_val)
 
     LDHAT_PAIRWISE(LOOKUP_TABLE_LDPOP.out.lookupTable_txt, LDHAT_CONVERT.out.locs_txt, LDHAT_CONVERT.out.sites_txt, FAST_SIM_BAC.out.r_val, FAST_SIM_BAC.out.m_val, FAST_SIM_BAC.out.s_val)
 }
