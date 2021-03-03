@@ -4,8 +4,11 @@ import sys
 import pexpect
 
 recom_tract_len = sys.argv[1]
+sites_file = sys.argv[2]
+locs_file = sys.argv[3]
+lk_table = sys.argv[4]
 
-child = pexpect.spawn("pairwise -seq sites.txt -loc locs.txt -lk lookupTable.txt -prefix pairwise_", encoding='utf-8',
+child = pexpect.spawn(f"pairwise -seq {sites_file} -loc {locs_file} -lk {lk_table} -prefix pairwise_", encoding='utf-8',
                       logfile=sys.stdout)
 
 child.expect_exact("Input average tract length for conversion model: ")

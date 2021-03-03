@@ -16,3 +16,4 @@ Output/
 .nextflow.log
 
 ReferenceOutput/
+trees.txt

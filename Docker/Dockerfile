@@ -5,7 +5,7 @@ RUN apt-get dist-upgrade --yes
 RUN apt-get install samtools procps --yes
 
 RUN conda update conda
-RUN conda install pandas seaborn python=3.6 scipy future biopython make --yes
+RUN conda install pandas seaborn python=3.6 scipy future biopython make pexpect --yes
 RUN conda install -c bioconda fastsimbac seq-gen bwa lofreq pysam --yes
 RUN conda clean --all --yes
 

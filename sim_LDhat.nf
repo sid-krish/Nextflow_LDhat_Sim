@@ -145,7 +145,29 @@ process LDHAT_CONVERT{
         // The information printed on screen was useful so decided to save that also.
         // -2only, only output sites with exactly two alleles
         """
-        convert -seq  LDhat_reformated.fa -2only > convertOut.txt
+        convert -seq LDhat_reformated.fa -2only > convertOut.txt
+        """
+
+}
+
+
+process SWITCH_TO_GENE_CONVERSION_MODE{
+    publishDir "Output", mode: "copy", saveAs: {filename -> "s_${seed}_m_${mutation_rate}_r_${recom_rate}/s_${seed}_m_${mutation_rate}_r_${recom_rate}_${filename}"}
+
+    maxForks 1
+
+    input:
+        path locs_txt
+        val recom_rate
+        val mutation_rate
+        val seed
+
+    output:
+        path "locs_C.txt", emit: locs_C_txt
+
+    script:
+        """
+        get_ldhat_to_use_gene_conv.py locs.txt
         """
 
 }
@@ -215,8 +237,8 @@ process LDHAT_PAIRWISE{
 
     input:
         path lookup_table_file
-        path locs_forLDhatInterval
-        path sites_forLDhatInterval
+        path locs_C_txt
+        path sites_txt
         val recom_rate
         val mutation_rate
         val seed
@@ -229,7 +251,7 @@ process LDHAT_PAIRWISE{
     script:
         // uses pexpect to handle unavoidale prompts
         """
-        
+        run_pairwise_with_pexpect.py ${params.recom_tract_len} sites.txt locs_C.txt lookupTable.txt > pairwise_stdOut.txt
         """
 
 }
@@ -237,11 +259,11 @@ process LDHAT_PAIRWISE{
 
 // Params and Channels for workflow
 // Note: Channels can be called unlimited number of times in DSL2
-params.genomeSize = 1000
+params.genomeSize = 20000
 // params.meanFragmentLen = 150
-params.sampleSize = 2
+params.sampleSize = 10
 params.recom_tract_len = 500
-params.ldpop_rho_range = "20,100"
+params.ldpop_rho_range = "101,100"
 params.effective_pop_size = 1
 
 // precomputed likelihood table
@@ -276,9 +298,11 @@ workflow {
 
     LDHAT_CONVERT(LDHAT_REFORMAT_FASTA.out.ldhat_reformated_fa, FAST_SIM_BAC.out.r_val, FAST_SIM_BAC.out.m_val, FAST_SIM_BAC.out.s_val)
 
+    SWITCH_TO_GENE_CONVERSION_MODE(LDHAT_CONVERT.out.locs_txt, FAST_SIM_BAC.out.r_val, FAST_SIM_BAC.out.m_val, FAST_SIM_BAC.out.s_val)
+
     // LDHAT_INTERVAL(LOOKUP_TABLE_LDPOP.out.lookupTable_txt, LDHAT_CONVERT.out.freqs_txt, LDHAT_CONVERT.out.locs_txt, LDHAT_CONVERT.out.sites_txt, FAST_SIM_BAC.out.r_val, FAST_SIM_BAC.out.m_val, FAST_SIM_BAC.out.s_val)
 
     // LDHAT_INTERVAL_STAT(LDHAT_INTERVAL.out.rates_forLDhatStat, FAST_SIM_BAC.out.r_val, FAST_SIM_BAC.out.m_val, FAST_SIM_BAC.out.s_val)
 
-    LDHAT_PAIRWISE(LOOKUP_TABLE_LDPOP.out.lookupTable_txt, LDHAT_CONVERT.out.locs_txt, LDHAT_CONVERT.out.sites_txt, FAST_SIM_BAC.out.r_val, FAST_SIM_BAC.out.m_val, FAST_SIM_BAC.out.s_val)
+    LDHAT_PAIRWISE(LOOKUP_TABLE_LDPOP.out.lookupTable_txt, SWITCH_TO_GENE_CONVERSION_MODE.out.locs_C_txt, LDHAT_CONVERT.out.sites_txt, FAST_SIM_BAC.out.r_val, FAST_SIM_BAC.out.m_val, FAST_SIM_BAC.out.s_val)
 }
