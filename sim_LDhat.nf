@@ -259,11 +259,11 @@ process LDHAT_PAIRWISE{
 
 // Params and Channels for workflow
 // Note: Channels can be called unlimited number of times in DSL2
-params.genomeSize = 20000
+params.genomeSize = 1000
 // params.meanFragmentLen = 150
-params.sampleSize = 10
-params.recom_tract_len = 500
-params.ldpop_rho_range = "101,100"
+params.sampleSize = 2
+params.recom_tract_len = 10
+params.ldpop_rho_range = "11,100"
 params.effective_pop_size = 1
 
 // precomputed likelihood table

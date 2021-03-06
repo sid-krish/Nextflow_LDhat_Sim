@@ -14,8 +14,8 @@ child = pexpect.spawn(f"pairwise -seq {sites_file} -loc {locs_file} -lk {lk_tabl
 child.expect_exact("Input average tract length for conversion model: ")
 child.sendline(recom_tract_len)
 
-child.expect_exact(
-    "Do you wish to change grid over which to estimate likelihoods for (default = 101 points, 4Ner 0 - 100.0) (1/0) :")
+# plain expect allows use of regexp which is needed here
+child.expect("Do you wish to change grid over which to estimate likelihoods for *")
 child.sendline("0")
 
 child.expect_exact("Do you wish to carry out a sliding windows analysis? (yes=1/no=0):")
