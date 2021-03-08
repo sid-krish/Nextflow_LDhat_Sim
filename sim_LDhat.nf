@@ -42,6 +42,7 @@ process MS {
   
     script:
     """
+    echo 123 456 789 > seedms
     ms ${params.sampleSize} 1 -T -t ${mutation_rate} -r ${rho_rate} ${params.genomeSize} -c 10 ${params.recom_tract_len} > trees.txt
     """
 }
@@ -296,7 +297,7 @@ workflow {
 
     RATE_SELECTOR(rho_rates, mutation_rates, seed_values)
 
-    MS(RATE_SELECTOR.out.p_val, RATE_SELECTOR.out.m_val, RATE_SELECTOR.out.path_fn_modifier)
+    MS(RATE_SELECTOR.out.p_val, RATE_SELECTOR.out.m_val,  RATE_SELECTOR.out.path_fn_modifier)
 
     // FAST_SIM_BAC(RATE_SELECTOR.out.p_val, RATE_SELECTOR.out.m_val, RATE_SELECTOR.out.s_val, RATE_SELECTOR.out.path_fn_modifier)
 
