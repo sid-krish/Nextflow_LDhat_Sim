@@ -10,15 +10,15 @@ process RATE_SELECTOR {
 
     input:
         each rho_rate
-        each mutation_rate
-        each seed
+        each sample_size
+        each genome_size
 
     output:
         val "${rho_rate}", emit: p_val
-        val "${mutation_rate}", emit: m_val
-        val "${seed}", emit: s_val
+        val "${sample_size}", emit: sample_size
+        val "${genome_size}", emit: genome_size
 
-        val "s_${seed}_m_${mutation_rate}_p_${rho_rate}/s_${seed}_m_${mutation_rate}_p_${rho_rate}", emit: path_fn_modifier
+        val "rho_${rho_rate}_sam_${sample_size}_gen_${genome_size}/rho_${rho_rate}_sam_${sample_size}_gen_${genome_size}", emit: path_fn_modifier
 
     script:
     """
@@ -34,7 +34,8 @@ process MS {
 
     input:
         val rho_rate
-        val mutation_rate
+        val sample_size
+        val genome_size
         val path_fn_modifier
 
     output:
@@ -43,7 +44,7 @@ process MS {
     script:
     """
     echo 123 456 789 > seedms
-    ms ${params.sampleSize} 1 -T -t ${mutation_rate} -r ${rho_rate} ${params.genomeSize} -c 10 ${params.recom_tract_len} > trees.txt
+    ms ${sample_size} 1 -T -t ${params.mutation_rate} -r ${rho_rate} ${genome_size} -c 10 ${params.recom_tract_len} > trees.txt
     """
 }
 
@@ -55,8 +56,8 @@ process FAST_SIM_BAC {
     
     input:
         val rho_rate
-        val mutation_rate
-        val seed
+        val sample_size
+        val genome_size
         val path_fn_modifier
 
     output:
@@ -65,8 +66,8 @@ process FAST_SIM_BAC {
              
     script:
     """
-    fastSimBac ${params.sampleSize} ${params.genomeSize} -s ${seed} -T -t ${mutation_rate} -r ${rho_rate} ${params.recom_tract_len} > trees.txt
-    calc_rho.py ${params.effective_pop_size} ${rho_rate} ${params.genomeSize}
+    fastSimBac ${sample_size} ${genome_size} -s ${params.seed} -T -t ${params.mutation_rate} -r ${rho_rate} ${params.recom_tract_len} > trees.txt
+    calc_rho.py ${params.effective_pop_size} ${rho_rate} ${genome_size}
     """
 }
 
@@ -97,7 +98,7 @@ process SEQ_GEN {
 
     input:
         path cleanTrees
-        val seed
+        val genome_size
         val path_fn_modifier
 
     output:
@@ -108,7 +109,7 @@ process SEQ_GEN {
     // program crashes if seq length is not as the one set for fastsimbac
     """
     numTrees=\$(wc -l cleanTrees.txt | awk '{ print \$1 }')
-    seq-gen -m HKY -t 4 -l ${params.genomeSize} -z ${seed} -s 0.01 -p \$numTrees -of cleanTrees.txt > seqgenOut.fa
+    seq-gen -m HKY -t 4 -l ${genome_size} -z ${params.seed} -s 0.01 -p \$numTrees -of cleanTrees.txt > seqgenOut.fa
     """
 }
 
@@ -120,6 +121,8 @@ process LDHAT_REFORMAT_FASTA{
 
     input:
         path seqgenOut
+        val sample_size
+        val genome_size
         val path_fn_modifier
 
     output:
@@ -127,7 +130,7 @@ process LDHAT_REFORMAT_FASTA{
 
     script:
     """
-    LDhat_reformat_fasta.py seqgenOut.fa "${params.sampleSize}" "${params.genomeSize}" 1
+    LDhat_reformat_fasta.py seqgenOut.fa "${sample_size}" "${genome_size}" 1
     """
 }
 
@@ -138,7 +141,7 @@ process LOOKUP_TABLE_LDPOP {
     maxForks 1 
     
     input:
-        val mutation_rate
+        val sample_size
         val path_fn_modifier
 
     output:
@@ -148,7 +151,7 @@ process LOOKUP_TABLE_LDPOP {
     // There are other parameters that can be adjusted, I've left them out for the time being
     // also they mention twice muation and recom rate, for the mutation and recom parameters which I am unsure how to interpret
     """
-    ldtable.py --cores 4 -n ${params.sampleSize} -th ${mutation_rate} -rh ${params.ldpop_rho_range} --approx > lookupTable.txt
+    ldtable.py --cores 4 -n ${sample_size} -th ${params.mutation_rate} -rh ${params.ldpop_rho_range} --approx > lookupTable.txt
     """
 }
 
@@ -280,9 +283,10 @@ workflow {
     // Note: Channels can be called unlimited number of times in DSL2
     // A process component can be invoked only once in the same workflow context
 
-    params.genomeSize = 20000
+    
     // params.meanFragmentLen = 150
-    params.sampleSize = 10
+    params.seed = 123
+    params.mutation_rate = 0.01
     params.recom_tract_len = 500
     params.ldpop_rho_range = "101,100"
     params.effective_pop_size = 1
@@ -291,15 +295,16 @@ workflow {
     // lookup_Table = Channel.fromPath("$baseDir/lookupTable.txt")
     
     trees = Channel.fromPath("$baseDir/trees.txt")
+
     rho_rates = Channel.from(15, 30).first() // For fastsimbac use this for recom rate (it doesn't accept rho)
-    mutation_rates = Channel.from(0.01)
-    seed_values = Channel.from(123)
+    sample_sizes = Channel.from(10)
+    genome_sizes = Channel.from(20000)
 
-    RATE_SELECTOR(rho_rates, mutation_rates, seed_values)
+    RATE_SELECTOR(rho_rates, sample_sizes, genome_sizes)
 
-    MS(RATE_SELECTOR.out.p_val, RATE_SELECTOR.out.m_val,  RATE_SELECTOR.out.path_fn_modifier)
+    MS(RATE_SELECTOR.out.p_val, RATE_SELECTOR.out.sample_size, RATE_SELECTOR.out.genome_size, RATE_SELECTOR.out.path_fn_modifier)
 
-    // FAST_SIM_BAC(RATE_SELECTOR.out.p_val, RATE_SELECTOR.out.m_val, RATE_SELECTOR.out.s_val, RATE_SELECTOR.out.path_fn_modifier)
+   // FAST_SIM_BAC(RATE_SELECTOR.out.p_val, RATE_SELECTOR.out.sample_size, RATE_SELECTOR.out.genome_size, RATE_SELECTOR.out.path_fn_modifier)
 
     CLEAN_TREES(MS.out.trees_txt, RATE_SELECTOR.out.path_fn_modifier)
 
@@ -307,11 +312,11 @@ workflow {
 
     // CLEAN_TREES(trees, RATE_SELECTOR.out.path_fn_modifier)
 
-    SEQ_GEN(CLEAN_TREES.out.cleanTrees_txt, RATE_SELECTOR.out.s_val, RATE_SELECTOR.out.path_fn_modifier)
+    SEQ_GEN(CLEAN_TREES.out.cleanTrees_txt, RATE_SELECTOR.out.genome_size, RATE_SELECTOR.out.path_fn_modifier)
 
-    LDHAT_REFORMAT_FASTA(SEQ_GEN.out.seqgenout_fa, RATE_SELECTOR.out.path_fn_modifier)
+    LDHAT_REFORMAT_FASTA(SEQ_GEN.out.seqgenout_fa, RATE_SELECTOR.out.sample_size, RATE_SELECTOR.out.genome_size, RATE_SELECTOR.out.path_fn_modifier)
 
-    LOOKUP_TABLE_LDPOP(RATE_SELECTOR.out.m_val, RATE_SELECTOR.out.path_fn_modifier)
+    LOOKUP_TABLE_LDPOP(RATE_SELECTOR.out.sample_size, RATE_SELECTOR.out.path_fn_modifier)
 
     LDHAT_CONVERT(LDHAT_REFORMAT_FASTA.out.ldhat_reformated_fa, RATE_SELECTOR.out.path_fn_modifier)
 
