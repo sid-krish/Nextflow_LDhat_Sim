@@ -15,7 +15,7 @@ df = df.sort_values(by=["sample_size,genome_size"])
 
 plot = sns.barplot(data=df, x="rho", y="max_rho", hue="sample_size,genome_size")
 
-plot.set_title("rho(simulated) vs max_rho(estimated)")
+plot.set_title("Pairwise : rho(simulated) vs max_rho(estimated)")
 
 fig = plot.get_figure()
 
