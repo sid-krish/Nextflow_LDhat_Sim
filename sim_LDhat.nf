@@ -14,7 +14,7 @@ process RATE_SELECTOR {
         each genome_size
 
     output:
-        val "${rho_rate}", emit: p_val
+        val "${rho_rate}", emit: rho_rate
         val "${sample_size}", emit: sample_size
         val "${genome_size}", emit: genome_size
 
@@ -279,6 +279,48 @@ process LDHAT_PAIRWISE{
 }
 
 
+process PAIRWISE_PROCESS_OUTPUT{
+    publishDir "Output", mode: "copy", saveAs: {filename -> "${path_fn_modifier}_${filename}"}
+
+    maxForks 1
+
+    input:
+        path pairwise_outfile_txt
+        val rho_rate
+        val sample_size
+        val genome_size
+        val path_fn_modifier
+
+    output:
+        path "processed_results.csv", emit: processed_results_csv
+
+    script:
+        """
+        pairwise_process_output.py pairwise_outfile.txt ${rho_rate} ${sample_size} ${genome_size}
+        """
+
+}
+
+process PLOT_RESULTS{
+    publishDir "Output/Results", mode: "copy"
+
+    maxForks 1
+
+    input:
+        path collectedFile
+
+
+    output:
+        path "results_plot.png", emit: results_plot_png
+
+    script:
+        """
+        plot_results.py collected_results.csv
+        """
+
+}
+
+
 workflow {
     // Note: Channels can be called unlimited number of times in DSL2
     // A process component can be invoked only once in the same workflow context
@@ -296,15 +338,15 @@ workflow {
     
     trees = Channel.fromPath("$baseDir/trees.txt")
 
-    rho_rates = Channel.from(15, 30).first() // For fastsimbac use this for recom rate (it doesn't accept rho)
-    sample_sizes = Channel.from(10)
-    genome_sizes = Channel.from(20000)
+    rho_rates = Channel.from(15, 30, 45) // For fastsimbac use this for recom rate (it doesn't accept rho)
+    sample_sizes = Channel.from(10, 20, 30)
+    genome_sizes = Channel.from(30000, 40000, 50000)
 
     RATE_SELECTOR(rho_rates, sample_sizes, genome_sizes)
 
-    MS(RATE_SELECTOR.out.p_val, RATE_SELECTOR.out.sample_size, RATE_SELECTOR.out.genome_size, RATE_SELECTOR.out.path_fn_modifier)
+    MS(RATE_SELECTOR.out.rho_rate, RATE_SELECTOR.out.sample_size, RATE_SELECTOR.out.genome_size, RATE_SELECTOR.out.path_fn_modifier)
 
-   // FAST_SIM_BAC(RATE_SELECTOR.out.p_val, RATE_SELECTOR.out.sample_size, RATE_SELECTOR.out.genome_size, RATE_SELECTOR.out.path_fn_modifier)
+   // FAST_SIM_BAC(RATE_SELECTOR.out.rho_rate, RATE_SELECTOR.out.sample_size, RATE_SELECTOR.out.genome_size, RATE_SELECTOR.out.path_fn_modifier)
 
     CLEAN_TREES(MS.out.trees_txt, RATE_SELECTOR.out.path_fn_modifier)
 
@@ -327,4 +369,10 @@ workflow {
     // LDHAT_INTERVAL_STAT(LDHAT_INTERVAL.out.rates_forLDhatStat, RATE_SELECTOR.out.path_fn_modifier)
 
     LDHAT_PAIRWISE(LOOKUP_TABLE_LDPOP.out.lookupTable_txt, SWITCH_TO_GENE_CONVERSION_MODE.out.locs_C_txt, LDHAT_CONVERT.out.sites_txt, RATE_SELECTOR.out.path_fn_modifier)
+
+    PAIRWISE_PROCESS_OUTPUT(LDHAT_PAIRWISE.out.pairwise_outfile_txt, RATE_SELECTOR.out.rho_rate, RATE_SELECTOR.out.sample_size, RATE_SELECTOR.out.genome_size, RATE_SELECTOR.out.path_fn_modifier)
+
+    collectedFile = PAIRWISE_PROCESS_OUTPUT.out.processed_results_csv.collectFile(name:"collected_results.csv",storeDir:"Output/Results", keepHeader:true)
+
+    PLOT_RESULTS(collectedFile)
 }
