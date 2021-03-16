@@ -311,7 +311,8 @@ process PLOT_RESULTS{
 
 
     output:
-        path "results_plot.png", emit: results_plot_png
+        path "rho_comparision.png", emit: rho_comparision_png
+        path "max_lk_comparision.png", emit: max_lk_comparision_png
 
     script:
         """
