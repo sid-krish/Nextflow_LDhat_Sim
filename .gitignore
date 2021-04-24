@@ -14,6 +14,7 @@ bin/ldpop/__pycache__/
 Output/
 
 .nextflow.log
+.nextflow.log.*
 
 ReferenceOutput/
 trees.txt
