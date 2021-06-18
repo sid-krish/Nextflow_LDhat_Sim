@@ -339,8 +339,8 @@ workflow {
     
     // trees = Channel.fromPath("$baseDir/trees.txt")
 
-    rho_rates = Channel.from(10) // For fastsimbac use this for recom rate (it doesn't accept rho)
-    sample_sizes = Channel.from(10)
+    rho_rates = Channel.from(20) // For fastsimbac use this for recom rate (it doesn't accept rho)
+    sample_sizes = Channel.from(20)
     genome_sizes = Channel.from(10000)
 
     RATE_SELECTOR(rho_rates, sample_sizes, genome_sizes)
@@ -365,9 +365,9 @@ workflow {
 
     SWITCH_TO_GENE_CONVERSION_MODE(LDHAT_CONVERT.out.locs_txt, RATE_SELECTOR.out.path_fn_modifier)
 
-    // LDHAT_INTERVAL(LOOKUP_TABLE_LDPOP.out.lookupTable_txt, LDHAT_CONVERT.out.freqs_txt, LDHAT_CONVERT.out.locs_txt, LDHAT_CONVERT.out.sites_txt, RATE_SELECTOR.out.path_fn_modifier)
+    LDHAT_INTERVAL(LOOKUP_TABLE_LDPOP.out.lookupTable_txt, LDHAT_CONVERT.out.freqs_txt, LDHAT_CONVERT.out.locs_txt, LDHAT_CONVERT.out.sites_txt, RATE_SELECTOR.out.path_fn_modifier)
 
-    // LDHAT_INTERVAL_STAT(LDHAT_INTERVAL.out.rates_forLDhatStat, RATE_SELECTOR.out.path_fn_modifier)
+    LDHAT_INTERVAL_STAT(LDHAT_INTERVAL.out.rates_forLDhatStat, RATE_SELECTOR.out.path_fn_modifier)
 
     LDHAT_PAIRWISE(LOOKUP_TABLE_LDPOP.out.lookupTable_txt, SWITCH_TO_GENE_CONVERSION_MODE.out.locs_C_txt, LDHAT_CONVERT.out.sites_txt, RATE_SELECTOR.out.path_fn_modifier)
 
