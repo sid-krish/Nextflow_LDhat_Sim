@@ -35,6 +35,7 @@ process MS {
     input:
         val rho_rate
         val sample_size
+        val seed
         val genome_size
         val path_fn_modifier
 
@@ -44,7 +45,8 @@ process MS {
     script:
     """
     echo 123 456 789 > seedms
-    ms ${sample_size} 1 -T -t ${params.mutation_rate} -r ${rho_rate} ${genome_size} -c 10 ${params.recom_tract_len} > trees.txt
+    
+    ms ${sample_size} 1 -T -seeds ${seed} -t ${params.mutation_rate} -r 0 ${genome_size} -c ${rho_rate} ${params.recom_tract_len} > trees.txt
     """
 }
 
@@ -61,13 +63,13 @@ process FAST_SIM_BAC {
         val path_fn_modifier
 
     output:
-        path "rho_calc.txt", emit: rho_rho_calc_txt
+        // path "rho_calc.txt", emit: rho_rho_calc_txt
         path "trees.txt", emit: trees_txt
              
     script:
     """
     fastSimBac ${sample_size} ${genome_size} -s ${params.seed} -T -t ${params.mutation_rate} -r ${rho_rate} ${params.recom_tract_len} > trees.txt
-    calc_rho.py ${params.effective_pop_size} ${rho_rate} ${genome_size}
+    #calc_rho.py ${params.effective_pop_size} ${rho_rate} ${genome_size}
     """
 }
 
@@ -330,7 +332,7 @@ workflow {
     // params.meanFragmentLen = 150
     params.seed = 123
     params.mutation_rate = 0.01
-    params.recom_tract_len = 500
+    params.recom_tract_len = 1000
     params.ldpop_rho_range = "101,100"
     params.effective_pop_size = 1
     
@@ -339,15 +341,15 @@ workflow {
     
     // trees = Channel.fromPath("$baseDir/trees.txt")
 
-    rho_rates = Channel.from(20) // For fastsimbac use this for recom rate (it doesn't accept rho)
-    sample_sizes = Channel.from(20)
-    genome_sizes = Channel.from(10000)
+    rho_rates = Channel.from(0.05) // For fastsimbac use this for recom rate (it doesn't accept rho)
+    sample_sizes = Channel.from(10)
+    genome_sizes = Channel.from(100000)
 
     RATE_SELECTOR(rho_rates, sample_sizes, genome_sizes)
 
-    MS(RATE_SELECTOR.out.rho_rate, RATE_SELECTOR.out.sample_size, RATE_SELECTOR.out.genome_size, RATE_SELECTOR.out.path_fn_modifier)
+    MS(RATE_SELECTOR.out.rho_rate, RATE_SELECTOR.out.sample_size, params.seed, RATE_SELECTOR.out.genome_size, RATE_SELECTOR.out.path_fn_modifier)
 
-   // FAST_SIM_BAC(RATE_SELECTOR.out.rho_rate, RATE_SELECTOR.out.sample_size, RATE_SELECTOR.out.genome_size, RATE_SELECTOR.out.path_fn_modifier)
+    // FAST_SIM_BAC(RATE_SELECTOR.out.rho_rate, RATE_SELECTOR.out.sample_size, RATE_SELECTOR.out.genome_size, RATE_SELECTOR.out.path_fn_modifier)
 
     CLEAN_TREES(MS.out.trees_txt, RATE_SELECTOR.out.path_fn_modifier)
 
@@ -365,9 +367,9 @@ workflow {
 
     SWITCH_TO_GENE_CONVERSION_MODE(LDHAT_CONVERT.out.locs_txt, RATE_SELECTOR.out.path_fn_modifier)
 
-    LDHAT_INTERVAL(LOOKUP_TABLE_LDPOP.out.lookupTable_txt, LDHAT_CONVERT.out.freqs_txt, LDHAT_CONVERT.out.locs_txt, LDHAT_CONVERT.out.sites_txt, RATE_SELECTOR.out.path_fn_modifier)
+    // LDHAT_INTERVAL(LOOKUP_TABLE_LDPOP.out.lookupTable_txt, LDHAT_CONVERT.out.freqs_txt, LDHAT_CONVERT.out.locs_txt, LDHAT_CONVERT.out.sites_txt, RATE_SELECTOR.out.path_fn_modifier)
 
-    LDHAT_INTERVAL_STAT(LDHAT_INTERVAL.out.rates_forLDhatStat, RATE_SELECTOR.out.path_fn_modifier)
+    // LDHAT_INTERVAL_STAT(LDHAT_INTERVAL.out.rates_forLDhatStat, RATE_SELECTOR.out.path_fn_modifier)
 
     LDHAT_PAIRWISE(LOOKUP_TABLE_LDPOP.out.lookupTable_txt, SWITCH_TO_GENE_CONVERSION_MODE.out.locs_C_txt, LDHAT_CONVERT.out.sites_txt, RATE_SELECTOR.out.path_fn_modifier)
 
