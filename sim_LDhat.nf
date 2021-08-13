@@ -43,6 +43,9 @@ process MS {
         path "trees.txt", emit: trees_txt
   
     script:
+//     To carry out simulations with gene conversion but no crossing-over, one uses 
+//     the -r option with  equal to zero, and the -c option. In this case value following
+//     the -c option is the value of 4N0g, rather than the ratio g=r.
     """
     ms ${sample_size} 1 -T -seeds ${seed}  -t ${params.mutation_rate} -r 0 ${genome_size} -c ${rho_rate} ${params.recom_tract_len} > trees.txt
     """
