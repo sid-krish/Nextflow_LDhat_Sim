@@ -107,7 +107,7 @@ process SEQ_GEN {
     input:
         path cleanTrees
         val genome_size
-        va seed
+        val seed
         val path_fn_modifier
 
     output:
@@ -370,9 +370,9 @@ workflow {
 
     // CLEAN_TREES(trees, RATE_SELECTOR.out.path_fn_modifier)
 
-    SEQ_GEN(CLEAN_TREES.out.cleanTrees_txt, RATE_SELECTOR.out.genome_size, RATE_SELECTOR.out.path_fn_modifier)
+    SEQ_GEN(CLEAN_TREES.out.cleanTrees_txt, RATE_SELECTOR.out.genome_size, RATE_SELECTOR.out.seed, RATE_SELECTOR.out.path_fn_modifier)
 
-    LDHAT_REFORMAT_FASTA(SEQ_GEN.out.seqgenout_fa, RATE_SELECTOR.out.sample_size, RATE_SELECTOR.out.genome_size, RATE_SELECTOR.out.seed, RATE_SELECTOR.out.path_fn_modifier)
+    LDHAT_REFORMAT_FASTA(SEQ_GEN.out.seqgenout_fa, RATE_SELECTOR.out.sample_size, RATE_SELECTOR.out.genome_size, RATE_SELECTOR.out.path_fn_modifier)
 
     // LDHAT_REFORMAT_FASTA(fasta, RATE_SELECTOR.out.sample_size, RATE_SELECTOR.out.genome_size, RATE_SELECTOR.out.path_fn_modifier)
 
