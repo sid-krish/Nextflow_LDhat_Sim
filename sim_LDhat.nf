@@ -10,15 +10,17 @@ process RATE_SELECTOR {
 
     input:
         each rho_rate
+        val theta
+        val genome_size
         each sample_size
-        each genome_size
+        val seed
 
     output:
         val "${rho_rate}", emit: rho_rate
         val "${sample_size}", emit: sample_size
         val "${genome_size}", emit: genome_size
 
-        val "rho_${rho_rate}_sam_${sample_size}_gen_${genome_size}/rho_${rho_rate}_sam_${sample_size}_gen_${genome_size}", emit: path_fn_modifier
+        val "rho_${rho_rate}_theta_${theta}_genome_size_${genome_size}_sample_size_${sample_size}_seed_${seed}", emit: path_fn_modifier
 
     script:
     """
@@ -28,7 +30,7 @@ process RATE_SELECTOR {
 
 
 process MS {
-    publishDir "Output", mode: "copy", saveAs: {filename -> "${path_fn_modifier}_${filename}"}
+    // publishDir "Output", mode: "copy", saveAs: {filename -> "${path_fn_modifier}_${filename}"}
 
     maxForks 1 
 
@@ -53,7 +55,7 @@ process MS {
 
 
 process FAST_SIM_BAC {
-    publishDir "Output", mode: "copy", saveAs: {filename -> "${path_fn_modifier}_${filename}"}
+    // publishDir "Output", mode: "copy", saveAs: {filename -> "${path_fn_modifier}_${filename}"}
 
     maxForks 1 
     
@@ -76,7 +78,7 @@ process FAST_SIM_BAC {
 
 
 process CLEAN_TREES {
-    publishDir "Output", mode: "copy", saveAs: {filename -> "${path_fn_modifier}_${filename}"}
+    // publishDir "Output", mode: "copy", saveAs: {filename -> "${path_fn_modifier}_${filename}"}
     maxForks 1
 
     input:
@@ -95,7 +97,7 @@ process CLEAN_TREES {
 
 
 process SEQ_GEN {
-    publishDir "Output", mode: "copy", saveAs: {filename -> "${path_fn_modifier}_${filename}"}
+    // publishDir "Output", mode: "copy", saveAs: {filename -> "${path_fn_modifier}_${filename}"}
 
     maxForks 1
 
@@ -118,7 +120,7 @@ process SEQ_GEN {
 
 
 process LDHAT_REFORMAT_FASTA{
-    publishDir "Output", mode: "copy", saveAs: {filename -> "${path_fn_modifier}_${filename}"}
+    // publishDir "Output", mode: "copy", saveAs: {filename -> "${path_fn_modifier}_${filename}"}
 
     maxForks 1
 
@@ -139,7 +141,7 @@ process LDHAT_REFORMAT_FASTA{
 
 
 process LOOKUP_TABLE_LDPOP {
-    publishDir "Output", mode: "copy", saveAs: {filename -> "${path_fn_modifier}_${filename}"}
+    // publishDir "Output", mode: "copy", saveAs: {filename -> "${path_fn_modifier}_${filename}"}
 
     maxForks 1 
     
@@ -160,7 +162,7 @@ process LOOKUP_TABLE_LDPOP {
 
 
 process LDHAT_CONVERT{
-    publishDir "Output", mode: "copy", saveAs: {filename -> "${path_fn_modifier}_${filename}"}
+    // publishDir "Output", mode: "copy", saveAs: {filename -> "${path_fn_modifier}_${filename}"}
 
     maxForks 1
 
@@ -185,7 +187,7 @@ process LDHAT_CONVERT{
 
 
 process SWITCH_TO_GENE_CONVERSION_MODE{
-    publishDir "Output", mode: "copy", saveAs: {filename -> "${path_fn_modifier}_${filename}"}
+    // publishDir "Output", mode: "copy", saveAs: {filename -> "${path_fn_modifier}_${filename}"}
 
     maxForks 1
 
@@ -205,7 +207,7 @@ process SWITCH_TO_GENE_CONVERSION_MODE{
 
 
 process LDHAT_INTERVAL{
-    publishDir "Output", mode: "copy", saveAs: {filename -> "${path_fn_modifier}_${filename}"}
+    // publishDir "Output", mode: "copy", saveAs: {filename -> "${path_fn_modifier}_${filename}"}
 
     maxForks 1
 
@@ -236,7 +238,7 @@ process LDHAT_INTERVAL{
 
 
 process LDHAT_INTERVAL_STAT{
-    publishDir "Output", mode: "copy", saveAs: {filename -> "${path_fn_modifier}_${filename}"}
+    // publishDir "Output", mode: "copy", saveAs: {filename -> "${path_fn_modifier}_${filename}"}
 
     maxForks 1
 
@@ -329,24 +331,26 @@ workflow {
     // Note: Channels can be called unlimited number of times in DSL2
     // A process component can be invoked only once in the same workflow context
 
-    
     params.seed = 123
     params.mutation_rate = 0.01
     params.recom_tract_len = 500
     params.ldpop_rho_range = "101,100"
     params.effective_pop_size = 1
+    params.rho_rates = 0.1
+    params.sample_sizes  = 10
+    params.genome_sizes = 25000
     
     // precomputed likelihood table
-    // lookup_Table = Channel.fromPath("$baseDir/lookupTable.txt")
+    lookup_Table = Channel.fromPath("$baseDir/lookupTable.txt")
     
     // trees = Channel.fromPath("$baseDir/trees.txt")
     // fasta = Channel.fromPath("$baseDir/simbac.fasta")
 
-    rho_rates = Channel.from(0.1) // For fastsimbac use this for recom rate (it doesn't accept rho)
-    sample_sizes = Channel.from(30)
-    genome_sizes = Channel.from(25000)
+    rho_rates = Channel.from(params.rho_rates) // For fastsimbac use this for recom rate (it doesn't accept rho)
+    sample_sizes = Channel.from(params.sample_sizes)
+    genome_sizes = Channel.from(params.genome_sizes)
 
-    RATE_SELECTOR(rho_rates, sample_sizes, genome_sizes)
+    RATE_SELECTOR(rho_rates, params.mutation_rate, genome_sizes, sample_sizes, params.seed)
 
     // MS(RATE_SELECTOR.out.rho_rate, RATE_SELECTOR.out.sample_size, params.seed, RATE_SELECTOR.out.genome_size, RATE_SELECTOR.out.path_fn_modifier)
 
@@ -364,7 +368,7 @@ workflow {
 
     // LDHAT_REFORMAT_FASTA(fasta, RATE_SELECTOR.out.sample_size, RATE_SELECTOR.out.genome_size, RATE_SELECTOR.out.path_fn_modifier)
 
-    LOOKUP_TABLE_LDPOP(RATE_SELECTOR.out.sample_size, RATE_SELECTOR.out.path_fn_modifier)
+    // LOOKUP_TABLE_LDPOP(RATE_SELECTOR.out.sample_size, RATE_SELECTOR.out.path_fn_modifier)
 
     LDHAT_CONVERT(LDHAT_REFORMAT_FASTA.out.ldhat_reformated_fa, RATE_SELECTOR.out.path_fn_modifier)
 
@@ -374,11 +378,13 @@ workflow {
 
     // LDHAT_INTERVAL_STAT(LDHAT_INTERVAL.out.rates_forLDhatStat, RATE_SELECTOR.out.path_fn_modifier)
 
-    LDHAT_PAIRWISE(LOOKUP_TABLE_LDPOP.out.lookupTable_txt, SWITCH_TO_GENE_CONVERSION_MODE.out.locs_C_txt, LDHAT_CONVERT.out.sites_txt, RATE_SELECTOR.out.path_fn_modifier)
+    // LDHAT_PAIRWISE(LOOKUP_TABLE_LDPOP.out.lookupTable_txt, SWITCH_TO_GENE_CONVERSION_MODE.out.locs_C_txt, LDHAT_CONVERT.out.sites_txt, RATE_SELECTOR.out.path_fn_modifier)
+
+    LDHAT_PAIRWISE(lookup_Table, SWITCH_TO_GENE_CONVERSION_MODE.out.locs_C_txt, LDHAT_CONVERT.out.sites_txt, RATE_SELECTOR.out.path_fn_modifier)
 
     PAIRWISE_PROCESS_OUTPUT(LDHAT_PAIRWISE.out.pairwise_outfile_txt, RATE_SELECTOR.out.rho_rate, RATE_SELECTOR.out.sample_size, RATE_SELECTOR.out.genome_size, RATE_SELECTOR.out.path_fn_modifier)
 
-    collectedFile = PAIRWISE_PROCESS_OUTPUT.out.processed_results_csv.collectFile(name:"collected_results.csv",storeDir:"Output/Results", keepHeader:true)
+    // collectedFile = PAIRWISE_PROCESS_OUTPUT.out.processed_results_csv.collectFile(name:"collected_results.csv",storeDir:"Output/Results", keepHeader:true)
 
-    PLOT_RESULTS(collectedFile)
+    // PLOT_RESULTS(collectedFile)
 }
