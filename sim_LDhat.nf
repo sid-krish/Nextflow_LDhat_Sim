@@ -336,9 +336,9 @@ workflow {
     params.recom_tract_len = 500
     params.ldpop_rho_range = "101,100"
     params.effective_pop_size = 1
-    params.rho_rates = 0.1
+    params.rho_rates = 0.01
     params.sample_sizes  = 10
-    params.genome_sizes = 25000
+    params.genome_sizes = 10000
     
     // precomputed likelihood table
     lookup_Table = Channel.fromPath("$baseDir/lookupTable.txt")
