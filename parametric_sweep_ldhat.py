@@ -36,12 +36,7 @@ def sweep_1_ldhat(rho, theta, genome_size, sample_size, seed):
 
     # Generate simulated datasets
     for rho, theta, genome_size, sample_size, seed in sweep_1_combinations:
-        subprocess.run(["nextflow", "run", "sim_gen.nf",
-                        "--rho_rates", f"{rho}",
-                        "--mutation_rate", f"{theta}",
-                        "--genome_sizes", f"{genome_size}",
-                        "--sample_sizes", f"{sample_size}",
-                        "--seed", f"{seed}"])
+        subprocess.run(f"nextflow run sim_LDhat.nf --rho_rates {rho} --mutation_rate {theta} --genome_sizes {genome_size} --sample_sizes {sample_size} --seed {seed}", shell=True)
 
     return None
 

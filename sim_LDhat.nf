@@ -10,16 +10,18 @@ process RATE_SELECTOR {
 
     input:
         each rho_rate
-        val theta
-        val genome_size
+        each theta
+        each genome_size
         each sample_size
-        val seed
+        each seed
 
     output:
         val "${rho_rate}", emit: rho_rate
-        val "${sample_size}", emit: sample_size
+        val "${theta}", emit: theta
         val "${genome_size}", emit: genome_size
-
+        val "${sample_size}", emit: sample_size
+        val "${seed}", emit: seed
+        
         val "rho_${rho_rate}_theta_${theta}_genome_size_${genome_size}_sample_size_${sample_size}_seed_${seed}", emit: path_fn_modifier
 
     script:
@@ -63,6 +65,8 @@ process FAST_SIM_BAC {
         val rho_rate
         val sample_size
         val genome_size
+        val theta
+        val seed
         val path_fn_modifier
 
     output:
@@ -71,8 +75,7 @@ process FAST_SIM_BAC {
              
     script:
     """
-    fastSimBac ${sample_size} ${genome_size} -s ${params.seed} -T -t ${params.mutation_rate} -r ${rho_rate} ${params.recom_tract_len} > trees.txt
-    #calc_rho.py ${params.effective_pop_size} ${rho_rate} ${genome_size}
+    fastSimBac ${sample_size} ${genome_size} -s ${seed} -T -t ${theta} -r ${rho_rate} ${params.recom_tract_len} > trees.txt
     """
 }
 
@@ -104,6 +107,7 @@ process SEQ_GEN {
     input:
         path cleanTrees
         val genome_size
+        va seed
         val path_fn_modifier
 
     output:
@@ -114,7 +118,7 @@ process SEQ_GEN {
     // program crashes if seq length is not as the one set for fastsimbac
     """
     numTrees=\$(wc -l cleanTrees.txt | awk '{ print \$1 }')
-    seq-gen -m HKY -t 4 -l ${genome_size} -z ${params.seed} -s 0.01 -p \$numTrees -of cleanTrees.txt > seqgenOut.fa
+    seq-gen -m HKY -t 4 -l ${genome_size} -z ${seed} -s 0.01 -p \$numTrees -of cleanTrees.txt > seqgenOut.fa
     """
 }
 
@@ -147,6 +151,7 @@ process LOOKUP_TABLE_LDPOP {
     
     input:
         val sample_size
+        val theta
         val path_fn_modifier
 
     output:
@@ -156,7 +161,7 @@ process LOOKUP_TABLE_LDPOP {
     // There are other parameters that can be adjusted, I've left them out for the time being
     // also they mention twice muation and recom rate, for the mutation and recom parameters which I am unsure how to interpret
     """
-    ldtable.py --cores 4 -n ${sample_size} -th ${params.mutation_rate} -rh ${params.ldpop_rho_range} --approx > lookupTable.txt
+    ldtable.py --cores 4 -n ${sample_size} -th ${theta} -rh ${params.ldpop_rho_range} --approx > lookupTable.txt
     """
 }
 
@@ -330,15 +335,16 @@ process PLOT_RESULTS{
 workflow {
     // Note: Channels can be called unlimited number of times in DSL2
     // A process component can be invoked only once in the same workflow context
+    // "rho_${rho_rate}_theta_${theta}_genome_size_${genome_size}_sample_size_${sample_size}_seed_${seed}"
 
-    params.seed = 123
-    params.mutation_rate = 0.01
+    params.seed = [123, 456, 789]
+    params.mutation_rate = [0.01]
     params.recom_tract_len = 500
     params.ldpop_rho_range = "101,100"
     params.effective_pop_size = 1
-    params.rho_rates = 0.01
-    params.sample_sizes  = 10
-    params.genome_sizes = 10000
+    params.rho_rates = [0.01, 0.02, 0.05, 0.1, 0.15]
+    params.sample_sizes  = [10]
+    params.genome_sizes = [10000, 25000, 50000, 75000, 100000]
     
     // precomputed likelihood table
     lookup_Table = Channel.fromPath("$baseDir/lookupTable.txt")
@@ -346,15 +352,17 @@ workflow {
     // trees = Channel.fromPath("$baseDir/trees.txt")
     // fasta = Channel.fromPath("$baseDir/simbac.fasta")
 
-    rho_rates = Channel.from(params.rho_rates) // For fastsimbac use this for recom rate (it doesn't accept rho)
-    sample_sizes = Channel.from(params.sample_sizes)
+    rho_rates = Channel.from(params.rho_rates)
+    theta_vals = Channel.from(params.mutation_rate)
     genome_sizes = Channel.from(params.genome_sizes)
+    sample_sizes = Channel.from(params.sample_sizes)
+    seed_vals = Channel.from(params.seed)
 
-    RATE_SELECTOR(rho_rates, params.mutation_rate, genome_sizes, sample_sizes, params.seed)
+    RATE_SELECTOR(rho_rates, theta_vals, genome_sizes, sample_sizes, seed_vals)
 
     // MS(RATE_SELECTOR.out.rho_rate, RATE_SELECTOR.out.sample_size, params.seed, RATE_SELECTOR.out.genome_size, RATE_SELECTOR.out.path_fn_modifier)
 
-    FAST_SIM_BAC(RATE_SELECTOR.out.rho_rate, RATE_SELECTOR.out.sample_size, RATE_SELECTOR.out.genome_size, RATE_SELECTOR.out.path_fn_modifier)
+    FAST_SIM_BAC(RATE_SELECTOR.out.rho_rate, RATE_SELECTOR.out.sample_size, RATE_SELECTOR.out.genome_size, RATE_SELECTOR.out.theta, RATE_SELECTOR.out.seed, RATE_SELECTOR.out.path_fn_modifier)
 
     // CLEAN_TREES(MS.out.trees_txt, RATE_SELECTOR.out.path_fn_modifier)
 
@@ -364,11 +372,11 @@ workflow {
 
     SEQ_GEN(CLEAN_TREES.out.cleanTrees_txt, RATE_SELECTOR.out.genome_size, RATE_SELECTOR.out.path_fn_modifier)
 
-    LDHAT_REFORMAT_FASTA(SEQ_GEN.out.seqgenout_fa, RATE_SELECTOR.out.sample_size, RATE_SELECTOR.out.genome_size, RATE_SELECTOR.out.path_fn_modifier)
+    LDHAT_REFORMAT_FASTA(SEQ_GEN.out.seqgenout_fa, RATE_SELECTOR.out.sample_size, RATE_SELECTOR.out.genome_size, RATE_SELECTOR.out.seed, RATE_SELECTOR.out.path_fn_modifier)
 
     // LDHAT_REFORMAT_FASTA(fasta, RATE_SELECTOR.out.sample_size, RATE_SELECTOR.out.genome_size, RATE_SELECTOR.out.path_fn_modifier)
 
-    // LOOKUP_TABLE_LDPOP(RATE_SELECTOR.out.sample_size, RATE_SELECTOR.out.path_fn_modifier)
+    // LOOKUP_TABLE_LDPOP(RATE_SELECTOR.out.sample_size, RATE_SELECTOR.out.theta, RATE_SELECTOR.out.path_fn_modifier)
 
     LDHAT_CONVERT(LDHAT_REFORMAT_FASTA.out.ldhat_reformated_fa, RATE_SELECTOR.out.path_fn_modifier)
 
