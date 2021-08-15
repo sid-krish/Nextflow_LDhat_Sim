@@ -342,12 +342,12 @@ workflow {
     params.recom_tract_len = 500
     params.ldpop_rho_range = "101,100"
     params.effective_pop_size = 1
-    params.rho_rates = [0.01, 0.02, 0.05, 0.1, 0.15]
+    params.rho_rates = [0.01, 0.025, 0.05, 0.075, 0.1]
     params.sample_sizes  = [10]
     params.genome_sizes = [10000, 25000, 50000, 75000, 100000]
     
     // precomputed likelihood table
-    lookup_Table = Channel.fromPath("$baseDir/lookupTable.txt")
+    // lookup_Table = Channel.fromPath("$baseDir/lookupTable.txt")
     
     // trees = Channel.fromPath("$baseDir/trees.txt")
     // fasta = Channel.fromPath("$baseDir/simbac.fasta")
@@ -376,7 +376,7 @@ workflow {
 
     // LDHAT_REFORMAT_FASTA(fasta, RATE_SELECTOR.out.sample_size, RATE_SELECTOR.out.genome_size, RATE_SELECTOR.out.path_fn_modifier)
 
-    // LOOKUP_TABLE_LDPOP(RATE_SELECTOR.out.sample_size, RATE_SELECTOR.out.theta, RATE_SELECTOR.out.path_fn_modifier)
+    LOOKUP_TABLE_LDPOP(RATE_SELECTOR.out.sample_size, RATE_SELECTOR.out.theta, RATE_SELECTOR.out.path_fn_modifier)
 
     LDHAT_CONVERT(LDHAT_REFORMAT_FASTA.out.ldhat_reformated_fa, RATE_SELECTOR.out.path_fn_modifier)
 
@@ -386,9 +386,9 @@ workflow {
 
     // LDHAT_INTERVAL_STAT(LDHAT_INTERVAL.out.rates_forLDhatStat, RATE_SELECTOR.out.path_fn_modifier)
 
-    // LDHAT_PAIRWISE(LOOKUP_TABLE_LDPOP.out.lookupTable_txt, SWITCH_TO_GENE_CONVERSION_MODE.out.locs_C_txt, LDHAT_CONVERT.out.sites_txt, RATE_SELECTOR.out.path_fn_modifier)
+    LDHAT_PAIRWISE(LOOKUP_TABLE_LDPOP.out.lookupTable_txt, SWITCH_TO_GENE_CONVERSION_MODE.out.locs_C_txt, LDHAT_CONVERT.out.sites_txt, RATE_SELECTOR.out.path_fn_modifier)
 
-    LDHAT_PAIRWISE(lookup_Table, SWITCH_TO_GENE_CONVERSION_MODE.out.locs_C_txt, LDHAT_CONVERT.out.sites_txt, RATE_SELECTOR.out.path_fn_modifier)
+    // LDHAT_PAIRWISE(lookup_Table, SWITCH_TO_GENE_CONVERSION_MODE.out.locs_C_txt, LDHAT_CONVERT.out.sites_txt, RATE_SELECTOR.out.path_fn_modifier)
 
     PAIRWISE_PROCESS_OUTPUT(LDHAT_PAIRWISE.out.pairwise_outfile_txt, RATE_SELECTOR.out.rho_rate, RATE_SELECTOR.out.sample_size, RATE_SELECTOR.out.genome_size, RATE_SELECTOR.out.path_fn_modifier)
 

@@ -49,4 +49,6 @@ if __name__ == '__main__':
     sample_size_sweep_1 = [10]
     seed_sweep_1 = [123, 456, 789]
 
+    recom_tract_len = 500
+
     sweep_1_ldhat(rho_sweep_1, theta_sweep_1, genome_size_sweep_1, sample_size_sweep_1, seed_sweep_1)
