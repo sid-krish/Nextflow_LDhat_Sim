@@ -2,7 +2,7 @@ import os
 
 import numpy as np
 import pandas as pd
-
+import seaborn as sns
 
 def collect_results_sweep_1(rho, theta, genome_size, sample_size, seed):
     # utilise numpy for combinations
@@ -61,3 +61,12 @@ if __name__ == '__main__':
     collected_results_sweep_1_df = collected_results_sweep_1_df.reindex(columns=reorder_cols)
 
     collected_results_sweep_1_df.to_csv("ldhat_collected_results_sweep_1.csv", index=None)
+
+    collected_results_sweep_1_df = collected_results_sweep_1_df.astype('float64')
+    
+    # Plot results
+    ax = sns.boxplot(data=collected_results_sweep_1_df,x="scaled_rho_sim", y="max_rho", hue="genome_size_sim", palette="Set3")
+
+    ax.set_title("LDhat Simulated (scaled_rho_sim) vs Estimated Rho (max_rho)")
+
+    ax.figure.savefig("ldhat_results.png", dpi=500)
