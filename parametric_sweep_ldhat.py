@@ -1,9 +1,10 @@
-import subprocess
+#!/usr/bin/env python
+
 import os
 import numpy as np
 
 """
-TODO: 2 Parametric sweeps + Replicates
+TODO: Parametric sweep + Replicates
 
 ####
 Sweep 1: Recombination rate simulations
@@ -24,7 +25,7 @@ Seed: 123, 456, 789
 """
 
 
-def sweep_1_ldhat(rho, theta, genome_size, sample_size, seed):
+def parametric_sweep(rho, theta, genome_size, sample_size, seed):
     # utilise numpy for combinations
     # https://www.kite.com/python/answers/how-to-get-all-element-combinations-of-two-numpy-arrays-in-python
 
@@ -36,19 +37,26 @@ def sweep_1_ldhat(rho, theta, genome_size, sample_size, seed):
 
     # Generate simulated datasets
     for rho, theta, genome_size, sample_size, seed in sweep_1_combinations:
-        subprocess.run(f"nextflow run sim_LDhat.nf --rho_rates {rho} --mutation_rate {theta} --genome_sizes {genome_size} --sample_sizes {sample_size} --seed {seed}", shell=True)
+        # subprocess.run(["nextflow", "run", "sim_LDhat.nf",
+        #                 "--rho_rates", f"{rho}",
+        #                 "--mutation_rate", f"{theta}",
+        #                 "--genome_sizes", f"{genome_size}",
+        #                 "--sample_sizes", f"{sample_size}",
+        #                 "--seed", f"{seed}"])
+
+        cmd = f"nextflow run sim_LDhat.nf --rho_rates {rho} --mutation_rate {theta} --genome_sizes {int(genome_size)} --sample_sizes {int(sample_size)} --seed {int(seed)}"
+        os.system(cmd)
 
     return None
 
 
 if __name__ == '__main__':
+
     # Sweep 1: Recombination rate estimation
-    rho_sweep_1 = [0.01, 0.02, 0.05, 0.1, 0.15]
+    rho_sweep_1 = [0.01, 0.025, 0.05, 0.075, 0.1]
     theta_sweep_1 = [0.01]
     genome_size_sweep_1 = [10000, 25000, 50000, 75000, 100000]
     sample_size_sweep_1 = [10]
     seed_sweep_1 = [123, 456, 789]
 
-    recom_tract_len = 500
-
-    sweep_1_ldhat(rho_sweep_1, theta_sweep_1, genome_size_sweep_1, sample_size_sweep_1, seed_sweep_1)
+    parametric_sweep(rho_sweep_1, theta_sweep_1, genome_size_sweep_1, sample_size_sweep_1, seed_sweep_1)

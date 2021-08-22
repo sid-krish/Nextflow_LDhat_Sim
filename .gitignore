@@ -13,6 +13,8 @@ bin/ldpop/__pycache__/
 
 Output/
 
+Output(Simulation_old)/
+
 .nextflow.log
 .nextflow.log.*
 
