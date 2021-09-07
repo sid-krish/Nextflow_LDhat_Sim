@@ -37,8 +37,8 @@ if __name__ == '__main__':
     # Sweep 1: Recombination rate estimation
     rho_sweep_1 = [0.01, 0.025, 0.05, 0.075, 0.1]
     theta_sweep_1 = [0.01]
-    genome_size_sweep_1 = [10000, 25000, 50000, 75000, 100000]
-    sample_size_sweep_1 = [25]
+    genome_size_sweep_1 = [25000]
+    sample_size_sweep_1 = [10,20,30,40]
     seed_sweep_1 = [123, 456, 789]
 
     recom_tract_len = 500
@@ -65,8 +65,10 @@ if __name__ == '__main__':
     collected_results_sweep_1_df = collected_results_sweep_1_df.astype('float64')
     
     # Plot results
-    ax = sns.boxplot(data=collected_results_sweep_1_df,x="scaled_rho_sim", y="max_rho", hue="genome_size_sim", palette="Set3")
+    ax = sns.boxplot(data=collected_results_sweep_1_df,x="scaled_rho_sim", y="max_rho", hue="sample_size_sim", palette="Set3")
+
+    ax.set(ylim=(0, 50))
 
     ax.set_title("LDhat Simulated (scaled_rho_sim) vs Estimated Rho (max_rho)")
 
-    ax.figure.savefig("ldhat_results.png", dpi=500)
+    ax.figure.savefig("ldhat_results_mixed_sample_size.png", dpi=500)
