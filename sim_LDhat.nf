@@ -183,7 +183,11 @@ process LDHAT_CONVERT{
 
     script:
         // The information printed on screen was useful so decided to save that also.
-        // -2only, only output sites with exactly two alleles
+        // -2only: Specifies that only polymorphic sites with exactly two alleles
+        // will be analysed and outputted Although only those sites with two alleles
+        // are analysed in pairwise and interval, outputting all segregating sites
+        // may be of interest and can be used to estimate a finite-sites estimate of
+        // Watterson’s theta per site within pairwise
         """
         convert -seq LDhat_reformated.fa -2only > convertOut.txt
         """
