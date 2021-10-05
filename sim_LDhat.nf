@@ -341,14 +341,14 @@ workflow {
     // A process component can be invoked only once in the same workflow context
     // "rho_${rho_rate}_theta_${theta}_genome_size_${genome_size}_sample_size_${sample_size}_seed_${seed}"
 
-    params.seed = [123, 456, 789]
-    params.mutation_rate = [0.01]
+    params.seed = 123
+    params.mutation_rate = 0.01
     params.recom_tract_len = 500
     params.ldpop_rho_range = "101,100"
     params.effective_pop_size = 1
-    params.rho_rates = [0.01, 0.025, 0.05, 0.075, 0.1]
-    params.sample_sizes  = [10,20,30,40]
-    params.genome_sizes = [25000]
+    params.rho_rates = 0.05
+    params.sample_sizes  = 20
+    params.genome_sizes = 25000
     
     // precomputed likelihood table
     // lookup_Table = Channel.fromPath("$baseDir/lookupTable.txt")

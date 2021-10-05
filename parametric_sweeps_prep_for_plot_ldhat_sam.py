@@ -38,8 +38,8 @@ if __name__ == '__main__':
     rho_sweep_1 = [0.01, 0.025, 0.05, 0.075, 0.1]
     theta_sweep_1 = [0.01]
     genome_size_sweep_1 = [25000]
-    sample_size_sweep_1 = [10,20,30,40]
-    seed_sweep_1 = [123, 456, 789]
+    sample_size_sweep_1 = [5, 10, 20, 30, 40, 50, 60]
+    seed_sweep_1 = [1,2,3,4,5,6,7,8,9,10]
 
     recom_tract_len = 500
 
@@ -65,9 +65,9 @@ if __name__ == '__main__':
     collected_results_sweep_1_df = collected_results_sweep_1_df.astype('float64')
     
     # Plot results
-    ax = sns.boxplot(data=collected_results_sweep_1_df,x="scaled_rho_sim", y="max_rho", hue="sample_size_sim", palette="Set3")
+    ax = sns.boxplot(data=collected_results_sweep_1_df,x="scaled_rho_sim", y="max_rho", hue="sample_size_sim", palette="Greys")
 
-    ax.set(ylim=(0, 50))
+    # ax.set(ylim=(0, 50))
 
     ax.set_title("LDhat Simulated (scaled_rho_sim) vs Estimated Rho (max_rho)")
 

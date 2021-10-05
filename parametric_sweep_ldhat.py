@@ -55,8 +55,8 @@ if __name__ == '__main__':
     # Sweep 1: Recombination rate estimation
     rho_sweep_1 = [0.01, 0.025, 0.05, 0.075, 0.1]
     theta_sweep_1 = [0.01]
-    genome_size_sweep_1 = [10000, 25000, 50000, 75000, 100000]
-    sample_size_sweep_1 = [10]
-    seed_sweep_1 = [123, 456, 789]
+    genome_size_sweep_1 = [25000]
+    sample_size_sweep_1 = [70, 80, 90, 100]
+    seed_sweep_1 = [1,2,3,4,5,6,7,8,9,10]
 
     parametric_sweep(rho_sweep_1, theta_sweep_1, genome_size_sweep_1, sample_size_sweep_1, seed_sweep_1)

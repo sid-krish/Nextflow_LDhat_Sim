@@ -1,0 +1,14 @@
+name: ldhat
+channels:
+  - defaults
+  - bioconda
+dependencies:
+  - pandas
+  - seaborn
+  - python=3.6
+  - scipy
+  - pexpect
+  - biopython
+  - future
+  - fastsimbac 
+  - seq-gen

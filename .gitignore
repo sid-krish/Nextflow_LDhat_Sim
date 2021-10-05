@@ -24,3 +24,5 @@ ReferenceOutput/
 trees.txt
 lookupTable.txt
 .Rproj.user
+*.csv
+*.png
