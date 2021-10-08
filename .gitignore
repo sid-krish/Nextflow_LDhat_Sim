@@ -26,3 +26,4 @@ lookupTable.txt
 .Rproj.user
 *.csv
 *.png
+bin/.DS_Store

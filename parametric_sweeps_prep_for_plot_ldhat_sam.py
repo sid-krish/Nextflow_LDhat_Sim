@@ -65,10 +65,12 @@ if __name__ == '__main__':
     collected_results_sweep_1_df = collected_results_sweep_1_df.astype('float64')
     
     # Plot results
-    ax = sns.boxplot(data=collected_results_sweep_1_df,x="scaled_rho_sim", y="max_rho", hue="sample_size_sim", palette="Greys")
+    ax = sns.boxplot(data=collected_results_sweep_1_df,x="scaled_rho_sim", y="max_rho", hue="sample_size_sim", palette="Oranges")
 
-    # ax.set(ylim=(0, 50))
+    ax.set(ylabel="Estimated \u03C1", xlabel="Simulated \u03C1")
 
-    ax.set_title("LDhat Simulated (scaled_rho_sim) vs Estimated Rho (max_rho)")
+    ax.legend(title='Genomes')
+
+    ax.set_title("LDhat")
 
     ax.figure.savefig("ldhat_results_mixed_sample_size.png", dpi=500)
