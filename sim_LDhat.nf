@@ -5,24 +5,21 @@ nextflow.enable.dsl = 2
 process RATE_SELECTOR {
     // This process prevents the need to use each in every process, which can be confusing
     // Perhaps this could be handled in a more elegant way using some DSL2 technique
-    
-    maxForks 1 // Run sequentially
 
     input:
-        each rho_rate
+        each rho
         each theta
         each genome_size
         each sample_size
         each seed
 
     output:
-        val "${rho_rate}", emit: rho_rate
-        val "${theta}", emit: theta
-        val "${genome_size}", emit: genome_size
-        val "${sample_size}", emit: sample_size
-        val "${seed}", emit: seed
-        
-        val "rho_${rho_rate}_theta_${theta}_genome_size_${genome_size}_sample_size_${sample_size}_seed_${seed}", emit: path_fn_modifier
+        tuple val(rho), 
+            val(theta),
+            val(genome_size),
+            val(sample_size),
+            val(seed), 
+            val("rho_${rho}_theta_${theta}_genome_size_${genome_size}_sample_size_${sample_size}_seed_${seed}")
 
     script:
     """
@@ -32,9 +29,7 @@ process RATE_SELECTOR {
 
 
 process MS {
-    // publishDir "Output", mode: "copy", saveAs: {filename -> "${path_fn_modifier}_${filename}"}
-
-    maxForks 1 
+    // publishDir "Output", mode: "copy", saveAs: {filename -> "${fn_modifier}_${filename}"}
 
     input:
         val rho_rate
@@ -57,40 +52,53 @@ process MS {
 
 
 process FAST_SIM_BAC {
-    // publishDir "Output", mode: "copy", saveAs: {filename -> "${path_fn_modifier}_${filename}"}
+    // publishDir "Output", mode: "copy", saveAs: {filename -> "${fn_modifier}_${filename}"}
 
-    maxForks 1 
-    
     input:
-        val rho_rate
-        val sample_size
-        val genome_size
-        val theta
-        val seed
-        val path_fn_modifier
+        tuple val(rho),
+            val(theta),
+            val(genome_size),
+            val(sample_size),
+            val(seed),
+            val(fn_modifier)
 
     output:
-        // path "rho_calc.txt", emit: rho_rho_calc_txt
-        path "trees.txt", emit: trees_txt
+        tuple val(rho), 
+            val(theta),
+            val(genome_size),
+            val(sample_size),
+            val(seed), 
+            val(fn_modifier),
+            path("trees.txt")
              
     script:
     """
-    fastSimBac ${sample_size} ${genome_size} -s ${seed} -T -t ${theta} -r ${rho_rate} ${params.recom_tract_len} > trees.txt
+    fastSimBac ${sample_size} ${genome_size} -s ${seed} -T -t ${theta} -r ${rho} ${params.recom_tract_len} > trees.txt
     """
 }
 
 
 process CLEAN_TREES {
-    // publishDir "Output", mode: "copy", saveAs: {filename -> "${path_fn_modifier}_${filename}"}
-    maxForks 1
-
+    // publishDir "Output", mode: "copy", saveAs: {filename -> "${fn_modifier}_${filename}"}
+    
     input:
-        path trees
-        val path_fn_modifier
+        tuple val(rho), 
+            val(theta),
+            val(genome_size),
+            val(sample_size),
+            val(seed), 
+            val(fn_modifier),
+            path("trees.txt")
 
 
     output:
-        path "cleanTrees.txt", emit: cleanTrees_txt
+        tuple val(rho), 
+            val(theta),
+            val(genome_size),
+            val(sample_size),
+            val(seed), 
+            val(fn_modifier),
+            path("cleanTrees.txt")
 
     script:
     """
@@ -100,18 +108,25 @@ process CLEAN_TREES {
 
 
 process SEQ_GEN {
-    // publishDir "Output", mode: "copy", saveAs: {filename -> "${path_fn_modifier}_${filename}"}
-
-    maxForks 1
+    // publishDir "Output", mode: "copy", saveAs: {filename -> "${fn_modifier}_${filename}"}
 
     input:
-        path cleanTrees
-        val genome_size
-        val seed
-        val path_fn_modifier
+        tuple val(rho), 
+            val(theta),
+            val(genome_size),
+            val(sample_size),
+            val(seed), 
+            val(fn_modifier),
+            path("cleanTrees.txt")
 
     output:
-        path "seqgenOut.fa", emit: seqgenout_fa
+        tuple val(rho), 
+            val(theta),
+            val(genome_size),
+            val(sample_size),
+            val(seed), 
+            val(fn_modifier),
+            path("seqgenOut.fa")
 
     script:
     // 1 partiion per tree
@@ -124,18 +139,25 @@ process SEQ_GEN {
 
 
 process LDHAT_REFORMAT_FASTA{
-    // publishDir "Output", mode: "copy", saveAs: {filename -> "${path_fn_modifier}_${filename}"}
-
-    maxForks 1
+    // publishDir "Output", mode: "copy", saveAs: {filename -> "${fn_modifier}_${filename}"}
 
     input:
-        path seqgenOut
-        val sample_size
-        val genome_size
-        val path_fn_modifier
+        tuple val(rho), 
+            val(theta),
+            val(genome_size),
+            val(sample_size),
+            val(seed), 
+            val(fn_modifier),
+            path(seqgenOut)
 
     output:
-        path "LDhat_reformated.fa", emit: ldhat_reformated_fa
+        tuple val(rho), 
+            val(theta),
+            val(genome_size),
+            val(sample_size),
+            val(seed), 
+            val(fn_modifier),
+            path("LDhat_reformated.fa")
 
     script:
     """
@@ -145,17 +167,26 @@ process LDHAT_REFORMAT_FASTA{
 
 
 process LOOKUP_TABLE_LDPOP {
-    // publishDir "Output", mode: "copy", saveAs: {filename -> "${path_fn_modifier}_${filename}"}
+    // publishDir "Output", mode: "copy", saveAs: {filename -> "${fn_modifier}_${filename}"}
 
-    maxForks 1 
-    
     input:
-        val sample_size
-        val theta
-        val path_fn_modifier
+        tuple val(rho), 
+            val(theta),
+            val(genome_size),
+            val(sample_size),
+            val(seed), 
+            val(fn_modifier),
+            path("LDhat_reformated.fa")
 
     output:
-        path "lookupTable.txt", emit: lookupTable_txt
+        tuple val(rho), 
+            val(theta),
+            val(genome_size),
+            val(sample_size),
+            val(seed), 
+            val(fn_modifier),
+            path("LDhat_reformated.fa"),
+            path("lookupTable.txt")
 
     script:
     // There are other parameters that can be adjusted, I've left them out for the time being
@@ -167,45 +198,66 @@ process LOOKUP_TABLE_LDPOP {
 
 
 process LDHAT_CONVERT{
-    // publishDir "Output", mode: "copy", saveAs: {filename -> "${path_fn_modifier}_${filename}"}
-
-    maxForks 1
+    // publishDir "Output", mode: "copy", saveAs: {filename -> "${fn_modifier}_${filename}"}
 
     input:
-        path fasta_forLDhatConvert
-        val path_fn_modifier
+        tuple val(rho), 
+            val(theta),
+            val(genome_size),
+            val(sample_size),
+            val(seed), 
+            val(fn_modifier),
+            path("LDhat_reformated.fa"),
+            path("lookupTable.txt")
 
     output:
-        path "freqs.txt", emit: freqs_txt
-        path "locs.txt", emit: locs_txt
-        path "sites.txt", emit: sites_txt
-        path "convertOut.txt", emit: convert_out_txt
+        tuple val(rho), 
+            val(theta),
+            val(genome_size),
+            val(sample_size),
+            val(seed), 
+            val(fn_modifier),
+            path("lookupTable.txt"),
+            path("locs.txt"),
+            path("sites.txt")
 
     script:
-        // The information printed on screen was useful so decided to save that also.
         // -2only: Specifies that only polymorphic sites with exactly two alleles
         // will be analysed and outputted Although only those sites with two alleles
         // are analysed in pairwise and interval, outputting all segregating sites
         // may be of interest and can be used to estimate a finite-sites estimate of
         // Watterson’s theta per site within pairwise
         """
-        convert -seq LDhat_reformated.fa -2only > convertOut.txt
+        convert -seq LDhat_reformated.fa -2only
         """
 
 }
 
 
 process SWITCH_TO_GENE_CONVERSION_MODE{
-    // publishDir "Output", mode: "copy", saveAs: {filename -> "${path_fn_modifier}_${filename}"}
-
-    maxForks 1
+    // publishDir "Output", mode: "copy", saveAs: {filename -> "${fn_modifier}_${filename}"}
 
     input:
-        path locs_txt
-        val path_fn_modifier
+        tuple val(rho), 
+            val(theta),
+            val(genome_size),
+            val(sample_size),
+            val(seed), 
+            val(fn_modifier),
+            path("lookupTable.txt"),
+            path("locs.txt"),
+            path("sites.txt")
 
     output:
-        path "locs_C.txt", emit: locs_C_txt
+        tuple val(rho), 
+            val(theta),
+            val(genome_size),
+            val(sample_size),
+            val(seed), 
+            val(fn_modifier),
+            path("lookupTable.txt"),
+            path("sites.txt"),
+            path("locs_C.txt")
 
     script:
         """
@@ -216,9 +268,7 @@ process SWITCH_TO_GENE_CONVERSION_MODE{
 
 
 process LDHAT_INTERVAL{
-    // publishDir "Output", mode: "copy", saveAs: {filename -> "${path_fn_modifier}_${filename}"}
-
-    maxForks 1
+    // publishDir "Output", mode: "copy", saveAs: {filename -> "${fn_modifier}_${filename}"}
 
     input:
         path lookup_table_file
@@ -247,9 +297,7 @@ process LDHAT_INTERVAL{
 
 
 process LDHAT_INTERVAL_STAT{
-    // publishDir "Output", mode: "copy", saveAs: {filename -> "${path_fn_modifier}_${filename}"}
-
-    maxForks 1
+    // publishDir "Output", mode: "copy", saveAs: {filename -> "${fn_modifier}_${filename}"}
 
     input:
         path rates_forLDhatStat
@@ -269,20 +317,29 @@ process LDHAT_INTERVAL_STAT{
 
 
 process LDHAT_PAIRWISE{
-    publishDir "Output", mode: "copy", saveAs: {filename -> "${path_fn_modifier}_${filename}"}
-
-    maxForks 1
+    publishDir "Output", mode: "copy", saveAs: {filename -> "${fn_modifier}_${filename}"}
 
     input:
-        path lookup_table_file
-        path locs_C_txt
-        path sites_txt
-        val path_fn_modifier
+        tuple val(rho), 
+            val(theta),
+            val(genome_size),
+            val(sample_size),
+            val(seed), 
+            val(fn_modifier),
+            path("lookupTable.txt"),
+            path("sites.txt"),
+            path("locs_C.txt")
 
     output:
-        path "pairwise_freqs.txt", emit: pairwise_freqs_txt
-        path "pairwise_outfile.txt", emit: pairwise_outfile_txt
-        path "pairwise_stdOut.txt", emit: pairwise_stdOut_txt
+        tuple val(rho), 
+            val(theta),
+            val(genome_size),
+            val(sample_size),
+            val(seed), 
+            val(fn_modifier),
+            path("pairwise_freqs.txt"),
+            path("pairwise_outfile.txt"),
+            path("pairwise_stdOut.txt")
 
     script:
         // uses pexpect to handle unavoidale prompts
@@ -294,23 +351,25 @@ process LDHAT_PAIRWISE{
 
 
 process PAIRWISE_PROCESS_OUTPUT{
-    publishDir "Output", mode: "copy", saveAs: {filename -> "${path_fn_modifier}_${filename}"}
-
-    maxForks 1
+    publishDir "Output", mode: "copy", saveAs: {filename -> "${fn_modifier}_${filename}"}
 
     input:
-        path pairwise_outfile_txt
-        val rho_rate
-        val sample_size
-        val genome_size
-        val path_fn_modifier
+        tuple val(rho), 
+            val(theta),
+            val(genome_size),
+            val(sample_size),
+            val(seed), 
+            val(fn_modifier),
+            path("pairwise_freqs.txt"),
+            path("pairwise_outfile.txt"),
+            path("pairwise_stdOut.txt")
 
     output:
         path "processed_results.csv", emit: processed_results_csv
 
     script:
         """
-        pairwise_process_output.py pairwise_outfile.txt ${rho_rate} ${sample_size} ${genome_size}
+        pairwise_process_output.py pairwise_outfile.txt ${rho} ${sample_size} ${genome_size}
         """
 
 }
@@ -318,15 +377,12 @@ process PAIRWISE_PROCESS_OUTPUT{
 process PLOT_RESULTS{
     publishDir "Output/Results", mode: "copy"
 
-    maxForks 1
-
     input:
         path collectedFile
 
-
     output:
-        path "rho_comparision.png", emit: rho_comparision_png
-        path "max_lk_comparision.png", emit: max_lk_comparision_png
+        path "rho_comparison.png"
+        path "max_lk_comparison.png"
 
     script:
         """
@@ -339,22 +395,15 @@ process PLOT_RESULTS{
 workflow {
     // Note: Channels can be called unlimited number of times in DSL2
     // A process component can be invoked only once in the same workflow context
-    // "rho_${rho_rate}_theta_${theta}_genome_size_${genome_size}_sample_size_${sample_size}_seed_${seed}"
 
     params.seed = 123
     params.mutation_rate = 0.01
     params.recom_tract_len = 500
     params.ldpop_rho_range = "101,100"
     params.effective_pop_size = 1
-    params.rho_rates = 0.05
+    params.rho_rates = 0.001
     params.sample_sizes  = 20
     params.genome_sizes = 25000
-    
-    // precomputed likelihood table
-    // lookup_Table = Channel.fromPath("$baseDir/lookupTable.txt")
-    
-    // trees = Channel.fromPath("$baseDir/trees.txt")
-    // fasta = Channel.fromPath("$baseDir/simbac.fasta")
 
     rho_rates = Channel.from(params.rho_rates)
     theta_vals = Channel.from(params.mutation_rate)
@@ -362,39 +411,35 @@ workflow {
     sample_sizes = Channel.from(params.sample_sizes)
     seed_vals = Channel.from(params.seed)
 
+    // For each process there is a output of tuple with the params that change + necessary files/values  to move forward until they are no longer need
+
     RATE_SELECTOR(rho_rates, theta_vals, genome_sizes, sample_sizes, seed_vals)
 
     // MS(RATE_SELECTOR.out.rho_rate, RATE_SELECTOR.out.sample_size, params.seed, RATE_SELECTOR.out.genome_size, RATE_SELECTOR.out.path_fn_modifier)
 
-    FAST_SIM_BAC(RATE_SELECTOR.out.rho_rate, RATE_SELECTOR.out.sample_size, RATE_SELECTOR.out.genome_size, RATE_SELECTOR.out.theta, RATE_SELECTOR.out.seed, RATE_SELECTOR.out.path_fn_modifier)
-
     // CLEAN_TREES(MS.out.trees_txt, RATE_SELECTOR.out.path_fn_modifier)
 
-    CLEAN_TREES(FAST_SIM_BAC.out.trees_txt, RATE_SELECTOR.out.path_fn_modifier)
+    FAST_SIM_BAC(RATE_SELECTOR.out)
 
-    // CLEAN_TREES(trees, RATE_SELECTOR.out.path_fn_modifier)
+    CLEAN_TREES(FAST_SIM_BAC.out)
 
-    SEQ_GEN(CLEAN_TREES.out.cleanTrees_txt, RATE_SELECTOR.out.genome_size, RATE_SELECTOR.out.seed, RATE_SELECTOR.out.path_fn_modifier)
+    SEQ_GEN(CLEAN_TREES.out)
 
-    LDHAT_REFORMAT_FASTA(SEQ_GEN.out.seqgenout_fa, RATE_SELECTOR.out.sample_size, RATE_SELECTOR.out.genome_size, RATE_SELECTOR.out.path_fn_modifier)
+    LDHAT_REFORMAT_FASTA(SEQ_GEN.out)
 
-    // LDHAT_REFORMAT_FASTA(fasta, RATE_SELECTOR.out.sample_size, RATE_SELECTOR.out.genome_size, RATE_SELECTOR.out.path_fn_modifier)
+    LOOKUP_TABLE_LDPOP(LDHAT_REFORMAT_FASTA.out)
 
-    LOOKUP_TABLE_LDPOP(RATE_SELECTOR.out.sample_size, RATE_SELECTOR.out.theta, RATE_SELECTOR.out.path_fn_modifier)
+    LDHAT_CONVERT(LOOKUP_TABLE_LDPOP.out)
 
-    LDHAT_CONVERT(LDHAT_REFORMAT_FASTA.out.ldhat_reformated_fa, RATE_SELECTOR.out.path_fn_modifier)
-
-    SWITCH_TO_GENE_CONVERSION_MODE(LDHAT_CONVERT.out.locs_txt, RATE_SELECTOR.out.path_fn_modifier)
+    SWITCH_TO_GENE_CONVERSION_MODE(LDHAT_CONVERT.out)
 
     // LDHAT_INTERVAL(LOOKUP_TABLE_LDPOP.out.lookupTable_txt, LDHAT_CONVERT.out.freqs_txt, LDHAT_CONVERT.out.locs_txt, LDHAT_CONVERT.out.sites_txt, RATE_SELECTOR.out.path_fn_modifier)
 
     // LDHAT_INTERVAL_STAT(LDHAT_INTERVAL.out.rates_forLDhatStat, RATE_SELECTOR.out.path_fn_modifier)
 
-    LDHAT_PAIRWISE(LOOKUP_TABLE_LDPOP.out.lookupTable_txt, SWITCH_TO_GENE_CONVERSION_MODE.out.locs_C_txt, LDHAT_CONVERT.out.sites_txt, RATE_SELECTOR.out.path_fn_modifier)
+    LDHAT_PAIRWISE(SWITCH_TO_GENE_CONVERSION_MODE.out)
 
-    // LDHAT_PAIRWISE(lookup_Table, SWITCH_TO_GENE_CONVERSION_MODE.out.locs_C_txt, LDHAT_CONVERT.out.sites_txt, RATE_SELECTOR.out.path_fn_modifier)
-
-    PAIRWISE_PROCESS_OUTPUT(LDHAT_PAIRWISE.out.pairwise_outfile_txt, RATE_SELECTOR.out.rho_rate, RATE_SELECTOR.out.sample_size, RATE_SELECTOR.out.genome_size, RATE_SELECTOR.out.path_fn_modifier)
+    PAIRWISE_PROCESS_OUTPUT(LDHAT_PAIRWISE.out)
 
     // collectedFile = PAIRWISE_PROCESS_OUTPUT.out.processed_results_csv.collectFile(name:"collected_results.csv",storeDir:"Output/Results", keepHeader:true)
 

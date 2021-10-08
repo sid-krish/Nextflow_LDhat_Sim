@@ -24,7 +24,7 @@ g.map_dataframe(sns.barplot, x="max_rho", y="sample_size,genome_size")
 g.set_axis_labels("estimated_rho", "sample_size,genome_size")
 
 g.fig.suptitle('LDhat Pairwise : rho vs estimated_rho', y=1.05)
-g.savefig("rho_comparision.png", dpi=500)
+g.savefig("rho_comparison.png", dpi=500)
 
 
 g2 = sns.FacetGrid(df, col="rho")
@@ -32,4 +32,4 @@ g2.map_dataframe(sns.barplot, x="abs_max_lk", y="sample_size,genome_size")
 g2.set_axis_labels("abs(max_lk)", "sample_size,genome_size")
 
 g2.fig.suptitle('LDhat Pairwise : rho vs max_likelihood', y=1.05)
-g2.savefig("max_lk_comparision.png", dpi=500)
+g2.savefig("max_lk_comparison.png", dpi=500)
