@@ -15,7 +15,7 @@ def collect_results_sweep_1(rho, theta, genome_size, sample_size, seed):
     sweep_1_combinations = mesh_grid.T.reshape(-1, 5)
 
     # Load data into dataframe
-    recom_est_results_dir = f"{os.getcwd()}/Output/"
+    recom_est_results_dir = f"{os.getcwd()}/Output_for_figure/"
 
     col_names = ["rho_sim", "theta_sim", "genome_size_sim", "sample_size_sim", "seed_sim",
                  "rho", "sample_size", "genome_size", "max_rho", "max_lk"]
@@ -38,7 +38,7 @@ if __name__ == '__main__':
     rho_sweep_1 = [0.01, 0.025, 0.05, 0.075, 0.1]
     theta_sweep_1 = [0.01]
     genome_size_sweep_1 = [25000]
-    sample_size_sweep_1 = [5, 10, 20, 30, 40, 50, 60]
+    sample_size_sweep_1 = [5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
     seed_sweep_1 = [1,2,3,4,5,6,7,8,9,10]
 
     recom_tract_len = 500
