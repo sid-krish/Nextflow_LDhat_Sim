@@ -2,10 +2,12 @@ name: ldhat
 channels:
   - defaults
   - bioconda
+  - conda-forge
 dependencies:
   - pandas
+  - numpy
   - seaborn
-  - python=3.6
+  - python
   - scipy
   - pexpect
   - biopython

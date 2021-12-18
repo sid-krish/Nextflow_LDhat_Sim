@@ -2,12 +2,10 @@ FROM continuumio/miniconda3
 
 RUN apt-get update
 RUN apt-get dist-upgrade --yes
-RUN apt-get install samtools procps --yes
+RUN apt-get install build-essential procps --yes
 
 RUN conda update conda
-RUN conda install pandas seaborn python=3.6 scipy future biopython make pexpect --yes
-RUN conda install -c bioconda fastsimbac seq-gen bwa lofreq pysam --yes
-RUN conda install -c plotly plotly --yes
+RUN conda install -c defaults -c bioconda -c conda-forge pandas numpy seaborn python scipy future biopython pexpect fastsimbac seq-gen --yes
 RUN conda clean --all --yes
 
 COPY art_illumina /usr/local/bin/
