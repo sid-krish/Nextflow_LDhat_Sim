@@ -1,29 +1,11 @@
-
-*.001
+.idea/
 
 .nextflow/
 
+.vscode/
+
 work/
 
-.DS_Store
-
-bin/ldpop/__pycache__/
-
-.idea/
-
-Output/
-
-Output*/
-
-SimulationResults*/
-
 .nextflow.log
-.nextflow.log.*
 
-ReferenceOutput/
-trees.txt
-lookupTable.txt
-.Rproj.user
-*.csv
-*.png
-bin/.DS_Store
+.nextflow.log.*
