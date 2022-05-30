@@ -9,3 +9,5 @@ work/
 .nextflow.log
 
 .nextflow.log.*
+
+Msp_Sim_Output/
