@@ -50,7 +50,7 @@ process MSPRIME {
              
     script:
     """
-    msp_sim_fa.py ${sample_size} ${genome_size} ${rho} ${params.recom_tract_len} ${seed} ${theta}
+    msp_sim_fa.py ${sample_size} ${genome_size} ${rho} ${params.tract_len} ${seed} ${theta}
     """
 }
 
@@ -59,24 +59,23 @@ workflow {
     // Note: Channels can be called unlimited number of times in DSL2
     // A process component can be invoked only once in the same workflow context
 
-    params.rho_rates = [0.005] // unscaled r values. rho = 2 . p . N_e . r . tractlen
-    params.theta_rates = [0.005] // unscaled u values. theta = 2 . p . N_e . u
-    params.genome_sizes = [25000]
-    params.sample_sizes  = [50]
-    params.seeds = [1]
+    params.recom_rates = [0.005, 0.01] // unscaled r values. rho = 2 . p . N_e . r . tractlen
+    params.mutation_rates = [0.005] // unscaled u values. theta = 2 . p . N_e . u
+    params.genome_sizes = [50000]
+    params.sample_sizes  = [20]
+    params.seeds = [123]
     
-    params.recom_tract_len = 1000
-    // params.effective_pop_size = 1
+    params.tract_len = 1000
 
-    rho_rates = Channel.from(params.rho_rates)
-    theta_vals = Channel.from(params.theta_rates)
+    recom_rates = Channel.from(params.recom_rates)
+    mutation_rates = Channel.from(params.mutation_rates)
     genome_sizes = Channel.from(params.genome_sizes)
     sample_sizes = Channel.from(params.sample_sizes)
     seed_vals = Channel.from(params.seeds)
 
     // For each process there is a output of tuple with the params that change + necessary files/values  to move forward until they are no longer need
 
-    RATE_SELECTOR(rho_rates, theta_vals, genome_sizes, sample_sizes, seed_vals)
+    RATE_SELECTOR(recom_rates, mutation_rates, genome_sizes, sample_sizes, seed_vals)
 
     MSPRIME(RATE_SELECTOR.out)
 
